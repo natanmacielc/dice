@@ -6,12 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.natanmacielc.dice.core.chain.CanonicalJson;
+import io.github.natanmacielc.dice.core.chain.ChainVerification;
+import io.github.natanmacielc.dice.core.chain.ChainVerifier;
+import io.github.natanmacielc.dice.core.chain.ProofVerifier;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,11 +27,12 @@ import org.junit.jupiter.api.TestFactory;
 /** Roda spec/test-vectors.json, os mesmos vetores dos verificadores JS e Python. */
 class TestVectorsTest {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static JsonNode root;
 
     @BeforeAll
     static void load() throws IOException {
-        root = new ObjectMapper().readTree(Path.of(System.getProperty("vectors.path")).toFile());
+        root = MAPPER.readTree(Path.of(System.getProperty("vectors.path")).toFile());
     }
 
     @Test
@@ -72,6 +78,41 @@ class TestVectorsTest {
                     v.get("clientSeed").asText(), nonce.asLong(), v.get("expression").asText()));
             assertEquals(v.get("error").asText(), ex.code().name());
         }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> canonicalJsonVectors() {
+        return stream("canonicalJsonVectors").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () ->
+                assertEquals(v.get("canonical").asText(), CanonicalJson.write(tree(v.get("value"))))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> logVectors() {
+        return stream("logVectors").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
+            ChainVerification result = ChainVerifier.verifySegmentJson((List<?>) tree(v.get("entries")),
+                    v.get("prevHashOfFirst").asText());
+            assertOutcome(v, result);
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> proofVectors() {
+        return stream("proofVectors").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> proof = (Map<String, Object>) tree(v.get("proof"));
+            assertOutcome(v, ProofVerifier.verify(proof));
+        }));
+    }
+
+    private static void assertOutcome(JsonNode v, ChainVerification result) {
+        assertEquals(v.get("valid").asBoolean(), result.valid(), result.message());
+        if (!result.valid()) {
+            assertEquals(v.get("error").asText(), result.code().name(), result.message());
+        }
+    }
+
+    private static Object tree(JsonNode node) {
+        return MAPPER.convertValue(node, Object.class);
     }
 
     private static Stream<JsonNode> stream(String field) {
