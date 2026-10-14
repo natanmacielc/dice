@@ -17,13 +17,15 @@ Deploy: CloudFront, API Gateway HTTP API, Lambda (Quarkus, SnapStart), DynamoDB 
 
 ## Comandos
 
-(Atualize esta seção quando o scaffold da Fase 0 existir.)
+JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `java` padrão é 17, então antes do Maven rode `export JAVA_HOME=$(/usr/libexec/java_home -v 21)`.
 
 - Build e testes: `./mvnw -q verify`
 - Só o núcleo: `./mvnw -q -pl dice-core test`
-- Verificador Python: `python3 -m pytest tools/verify-py`
-- Verificador JS: `node --test web/`
-- Infra, sem deploy: `cdk synth` e `cdk diff`
+- Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1`, depois `.venv/bin/python -m pytest tools/verify-py`.
+- Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
+- Infra, sem deploy: `cdk synth` e `cdk diff` (Fase 5; o módulo infra/ fica fora do reactor Maven).
+- CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main. As actions são fixadas por SHA.
+- Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
 
 ## Algoritmo v1 (detalhes em spec/ALGORITHM.md)
 
