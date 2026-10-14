@@ -25,6 +25,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - CLI Python: `cd tools/verify-py && python3 -m dice_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
 - Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl dice-core compile`, depois `java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
+- Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive`
 - Infra, sem deploy: `cdk synth` e `cdk diff` (Fase 5; o módulo infra/ fica fora do reactor Maven).
 - CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main. As actions são fixadas por SHA.
 - Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
@@ -36,6 +37,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Cálculo: bloco(c) = SHA-256(randomness + "|" + clientSeed + "|" + nonce + "|" + c). Use palavras de 4 bytes big-endian sem sinal, em ordem. Descarte v >= 2^32 - (2^32 % lados). Resultado = v % lados + 1.
 - Cadeia de hash: entradas REQUEST, ROUND e RESULT. hash = SHA-256(prevHash + tipo + payload canônico).
 - Não existe server_seed.
+- Verificação BLS: só no navegador (Fase 4). O backend checa randomness == SHA-256(signature) e o guarda de relógio: latest só é aceito a ±1 round do esperado por floor((agora - genesis)/3) + 1.
 
 ## Invariantes (nunca quebrar)
 
