@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "plan",
+    "allow": [
+      "Read",
+      "Edit",
+      "Bash(./mvnw *)",
+      "Bash(mvn *)",
+      "Bash(python3 -m pytest *)",
+      "Bash(node --test *)",
+      "Bash(sha256sum *)",
+      "Bash(cdk synth *)",
+      "Bash(cdk diff *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "WebFetch(domain:api.drand.sh)",
+      "WebFetch(domain:drand.love)",
+      "WebFetch(domain:docs.drand.love)",
+      "WebFetch(domain:quarkus.io)",
+      "WebFetch(domain:docs.aws.amazon.com)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git merge *)",
+      "Bash(npm install *)",
+      "Bash(pip install *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Bash(cdk deploy *)",
+      "Bash(cdk destroy *)",
+      "Bash(aws *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(rm -rf *)"
+    ]
+  }
+}
