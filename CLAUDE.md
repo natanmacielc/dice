@@ -19,15 +19,16 @@ Deploy: CloudFront, API Gateway HTTP API, Lambda (Quarkus, SnapStart), DynamoDB 
 
 JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `java` padrão é 17, então antes do Maven rode `export JAVA_HOME=$(/usr/libexec/java_home -v 21)`.
 
-- Build e testes: `./mvnw -q verify`
+- Build e testes: `./mvnw -q verify`. Os testes do dice-app precisam do Docker (DynamoDB Local via Testcontainers).
 - Só o núcleo: `./mvnw -q -pl dice-core test`
 - Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1`, depois `.venv/bin/python -m pytest tools/verify-py`.
 - CLI Python: `cd tools/verify-py && python3 -m dice_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
+- Verificar uma prova: `cd tools/verify-py && python3 -m dice_verify.proof prova.json`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
 - Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl dice-core compile`, depois `java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
 - Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive`
 - Infra, sem deploy: `cdk synth` e `cdk diff` (Fase 5; o módulo infra/ fica fora do reactor Maven).
-- CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main. As actions são fixadas por SHA.
+- CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main e confere se `spec/test-vectors.json` bate com o gerador. As actions são fixadas por SHA.
 - Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
 
 ## Algoritmo v1 (detalhes em spec/ALGORITHM.md)
@@ -35,7 +36,9 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Rede: drand quicknet, chain hash fixo no código, rounds de 3 segundos.
 - Pedido: clientSeed (UTF-8, 1 a 64 bytes, escolhida antes do roll), expressão NdX+M e nonce sequencial por mesa. targetRound = latest.round + 2.
 - Cálculo: bloco(c) = SHA-256(randomness + "|" + clientSeed + "|" + nonce + "|" + c). Use palavras de 4 bytes big-endian sem sinal, em ordem. Descarte v >= 2^32 - (2^32 % lados). Resultado = v % lados + 1.
-- Cadeia de hash: entradas REQUEST, ROUND e RESULT. hash = SHA-256(prevHash + tipo + payload canônico).
+- Cadeia de hash (chain-v1): uma por mesa, entradas REQUEST, ROUND e RESULT. hash = SHA-256(prevHash + tipo + payload canônico). Payload em JSON canônico (subconjunto do RFC 8785) com seq, sessionId e rollId. prevHash da seq 1 = 64 zeros. Nonce começa em 1.
+- Resolução sob demanda: qualquer leitura (roll, prova, log) resolve pendentes cujo round alvo já existe. EXPIRED é só exibição (pendente mais de 60 s após o round alvo); não é estado gravado.
+- IDs de mesa e roll: 16 caracteres base32 Crockford minúsculo (80 bits). Página do roll: /r/{rollId}.
 - Não existe server_seed.
 - Verificação BLS: só no navegador (Fase 4). O backend checa randomness == SHA-256(signature) e o guarda de relógio: latest só é aceito a ±1 round do esperado por floor((agora - genesis)/3) + 1.
 

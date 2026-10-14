@@ -26,7 +26,12 @@ jobs:
           distribution: corretto
           java-version: '21'
           cache: maven
+      # Os testes do dice-app sobem DynamoDB Local via Testcontainers (Docker do runner).
       - run: ./mvnw -B -ntp verify
+      - name: Vetores commitados batem com o gerador
+        run: |
+          java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json
+          git diff --exit-code spec/test-vectors.json
 
   python:
     name: Python verifier
