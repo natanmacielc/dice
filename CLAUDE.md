@@ -22,7 +22,9 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Build e testes: `./mvnw -q verify`
 - Só o núcleo: `./mvnw -q -pl dice-core test`
 - Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1`, depois `.venv/bin/python -m pytest tools/verify-py`.
+- CLI Python: `cd tools/verify-py && python3 -m dice_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
+- Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl dice-core compile`, depois `java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
 - Infra, sem deploy: `cdk synth` e `cdk diff` (Fase 5; o módulo infra/ fica fora do reactor Maven).
 - CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main. As actions são fixadas por SHA.
 - Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
