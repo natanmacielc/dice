@@ -980,5 +980,2990 @@
       "expression": "0d0",
       "error": "NONCE_OUT_OF_RANGE"
     }
+  ],
+  "chainFormat": "chain-v1",
+  "canonicalJsonVectors": [
+    {
+      "id": "key-order",
+      "description": "chaves por unidade UTF-16: A < _ < a < aa < b",
+      "value": {
+        "b": 1,
+        "a": 2,
+        "A": 3,
+        "aa": 4,
+        "_": 5
+      },
+      "canonical": "{\"A\":3,\"_\":5,\"a\":2,\"aa\":4,\"b\":1}"
+    },
+    {
+      "id": "nested",
+      "description": "objetos e arrays aninhados; array vazio",
+      "value": {
+        "z": {
+          "y": [
+            3,
+            {
+              "b": 1,
+              "a": 0
+            }
+          ],
+          "x": "v"
+        },
+        "a": []
+      },
+      "canonical": "{\"a\":[],\"z\":{\"x\":\"v\",\"y\":[3,{\"a\":0,\"b\":1}]}}"
+    },
+    {
+      "id": "empty-containers",
+      "description": "objeto e array vazios",
+      "value": {
+        "o": {},
+        "l": []
+      },
+      "canonical": "{\"l\":[],\"o\":{}}"
+    },
+    {
+      "id": "string-escapes",
+      "description": "s\u00f3 estes caracteres s\u00e3o escapados",
+      "value": {
+        "s": "\"\\\u0008\u000c\n\u000d\t\u0001\u001f"
+      },
+      "canonical": "{\"s\":\"\\\"\\\\\\b\\f\\n\\r\\t\\u0001\\u001f\"}"
+    },
+    {
+      "id": "string-literals",
+      "description": "/, DEL e n\u00e3o-ASCII v\u00e3o literais",
+      "value": {
+        "s": "/ \u007f \u00e9 \u00e7 \ud83d\ude00 \u65e5\u672c"
+      },
+      "canonical": "{\"s\":\"/ \u007f \u00e9 \u00e7 \ud83d\ude00 \u65e5\u672c\"}"
+    },
+    {
+      "id": "integers",
+      "description": "inteiros no limite de 2^53 - 1",
+      "value": {
+        "n": [0, -1, 42, 9007199254740991, -9007199254740991]
+      },
+      "canonical": "{\"n\":[0,-1,42,9007199254740991,-9007199254740991]}"
+    },
+    {
+      "id": "strings-in-array",
+      "description": "strings em array mant\u00eam a ordem",
+      "value": {
+        "l": [
+          "b",
+          "a",
+          ""
+        ]
+      },
+      "canonical": "{\"l\":[\"b\",\"a\",\"\"]}"
+    },
+    {
+      "id": "request-payload",
+      "description": "payload real de um REQUEST",
+      "value": {
+        "seq": 1,
+        "sessionId": "kq1t9m3x7c2a8z5r",
+        "rollId": "a1b2c3d4e5f6g7h8",
+        "algorithm": "dice-v1",
+        "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+        "clientSeed": "mesa-do-drag\u00e3o",
+        "expression": "2d6+3",
+        "nonce": 1,
+        "targetRound": 1000000,
+        "requestedAt": "2023-09-27T08:29:19.500Z"
+      },
+      "canonical": "{\"algorithm\":\"dice-v1\",\"clientSeed\":\"mesa-do-drag\u00e3o\",\"drandChainHash\":\"52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971\",\"expression\":\"2d6+3\",\"nonce\":1,\"requestedAt\":\"2023-09-27T08:29:19.500Z\",\"rollId\":\"a1b2c3d4e5f6g7h8\",\"seq\":1,\"sessionId\":\"kq1t9m3x7c2a8z5r\",\"targetRound\":1000000}"
+    }
+  ],
+  "logVectors": [
+    {
+      "id": "log-valid-full",
+      "description": "mesa inteira desde o genesis",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": true
+    },
+    {
+      "id": "log-valid-middle",
+      "description": "segmento do meio com o hash anterior conhecido",
+      "prevHashOfFirst": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+      "entries": [
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": true
+    },
+    {
+      "id": "log-wrong-genesis",
+      "description": "primeira entrada n\u00e3o aponta para 64 zeros",
+      "prevHashOfFirst": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_LINK_BROKEN"
+    },
+    {
+      "id": "log-seq-gap",
+      "description": "entrada 5 removida",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_SEQ_GAP"
+    },
+    {
+      "id": "log-reordered",
+      "description": "entradas 2 e 3 trocadas",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_SEQ_GAP"
+    },
+    {
+      "id": "log-fork-duplicate-seq",
+      "description": "duas entradas com seq 2",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_SEQ_GAP"
+    },
+    {
+      "id": "log-hash-tampered",
+      "description": "randomness do ROUND trocado sem refazer o hash",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "0000000000000000000000000000000000000000000000000000000000000000",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_HASH_MISMATCH"
+    },
+    {
+      "id": "log-rewritten-entry",
+      "description": "RESULT reescrito com hash refeito: a entrada seguinte n\u00e3o encadeia",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+          "hash": "02fd083e237e140b81db8ed806e36f1076abcc3a3cc73742b2542c4c9d74f374",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 99
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+          "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+          "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+          "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+          "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+          "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_LINK_BROKEN"
+    },
+    {
+      "id": "log-payload-seq-mismatch",
+      "description": "payload.seq diferente de seq (hashes refeitos)",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "REQUEST",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "0f8794dde1c778e8564f909ff62733a9db673b815b466c4036ae1e0b19d60f02",
+          "payload": {
+            "seq": 20,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        },
+        {
+          "seq": 3,
+          "type": "ROUND",
+          "prevHash": "0f8794dde1c778e8564f909ff62733a9db673b815b466c4036ae1e0b19d60f02",
+          "hash": "9d51dc98e4fec2583cdfca244ac5bba7ccf2febb3ebf6a0a70b0d4fff10d1bdf",
+          "payload": {
+            "seq": 3,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "round": 1000000,
+            "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+            "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+          }
+        },
+        {
+          "seq": 4,
+          "type": "RESULT",
+          "prevHash": "9d51dc98e4fec2583cdfca244ac5bba7ccf2febb3ebf6a0a70b0d4fff10d1bdf",
+          "hash": "b4c67fd9316efc3b9a2a0fdd0eaa99dba476cd1e494120314de55d1de0c2513a",
+          "payload": {
+            "seq": 4,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "dice": [1, 1],
+            "modifier": 3,
+            "total": 5
+          }
+        },
+        {
+          "seq": 5,
+          "type": "ROUND",
+          "prevHash": "b4c67fd9316efc3b9a2a0fdd0eaa99dba476cd1e494120314de55d1de0c2513a",
+          "hash": "7f005dc7737ea59fd128a29bc3799e70f2a3540d8357db9981b4589d407c5895",
+          "payload": {
+            "seq": 5,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "round": 1000001,
+            "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+            "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+          }
+        },
+        {
+          "seq": 6,
+          "type": "RESULT",
+          "prevHash": "7f005dc7737ea59fd128a29bc3799e70f2a3540d8357db9981b4589d407c5895",
+          "hash": "9a742a09c87875de291b462b82c85824ef3977ec96e40dab73f3c417d634af77",
+          "payload": {
+            "seq": 6,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "dice": [1],
+            "modifier": 5,
+            "total": 6
+          }
+        },
+        {
+          "seq": 7,
+          "type": "REQUEST",
+          "prevHash": "9a742a09c87875de291b462b82c85824ef3977ec96e40dab73f3c417d634af77",
+          "hash": "254174b288ad257e79ed5f16a8d7181e5583c504a7019dfbc0bf1e76b61eec48",
+          "payload": {
+            "seq": 7,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "c|\"aspas\"",
+            "expression": "4d6-1",
+            "nonce": 3,
+            "targetRound": 1000002,
+            "requestedAt": "2023-09-27T08:29:26.999Z"
+          }
+        },
+        {
+          "seq": 8,
+          "type": "ROUND",
+          "prevHash": "254174b288ad257e79ed5f16a8d7181e5583c504a7019dfbc0bf1e76b61eec48",
+          "hash": "906453f4daf4983f1f70236505a48f6219e5934ecbc45a725e844708f049a857",
+          "payload": {
+            "seq": 8,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "round": 1000002,
+            "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+            "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+          }
+        },
+        {
+          "seq": 9,
+          "type": "RESULT",
+          "prevHash": "906453f4daf4983f1f70236505a48f6219e5934ecbc45a725e844708f049a857",
+          "hash": "b7912a6e7cb25969580e371df4e009bfa0c3c113a6b40f08f5d11d0c6bc28176",
+          "payload": {
+            "seq": 9,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "c0d1e2f3g4h5j6k7",
+            "dice": [2, 6, 4, 4],
+            "modifier": -1,
+            "total": 15
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_SEQ_MISMATCH"
+    },
+    {
+      "id": "log-unknown-type",
+      "description": "tipo de entrada fora do vocabul\u00e1rio",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        },
+        {
+          "seq": 2,
+          "type": "EXPIRE",
+          "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+          "payload": {
+            "seq": 2,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "b9c8d7e6f5g4h3j2",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "Thorin \ud83e\ude93",
+            "expression": "1d20+5",
+            "nonce": 2,
+            "targetRound": 1000001,
+            "requestedAt": "2023-09-27T08:29:21.750Z"
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_STRUCTURE"
+    },
+    {
+      "id": "log-boolean-in-payload",
+      "description": "booleano n\u00e3o \u00e9 permitido no payload",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z",
+            "flag": true
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_STRUCTURE"
+    },
+    {
+      "id": "log-float-in-payload",
+      "description": "float n\u00e3o \u00e9 permitido no payload",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1.5,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_STRUCTURE"
+    },
+    {
+      "id": "log-integer-too-large",
+      "description": "inteiro acima de 2^53 - 1",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 9007199254740992,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_STRUCTURE"
+    },
+    {
+      "id": "log-uppercase-hash",
+      "description": "hash em hex mai\u00fasculo",
+      "prevHashOfFirst": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entries": [
+        {
+          "seq": 1,
+          "type": "REQUEST",
+          "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "B529A31FB7C585C48A35637EFCC41CDE680BDD527F08AA29EC887752BB6D8994",
+          "payload": {
+            "seq": 1,
+            "sessionId": "kq1t9m3x7c2a8z5r",
+            "rollId": "a1b2c3d4e5f6g7h8",
+            "algorithm": "dice-v1",
+            "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+            "clientSeed": "mesa-do-drag\u00e3o",
+            "expression": "2d6+3",
+            "nonce": 1,
+            "targetRound": 1000000,
+            "requestedAt": "2023-09-27T08:29:19.500Z"
+          }
+        }
+      ],
+      "valid": false,
+      "error": "CHAIN_STRUCTURE"
+    }
+  ],
+  "proofVectors": [
+    {
+      "id": "proof-valid-interleaved",
+      "description": "roll A com o REQUEST de B no meio",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "mesa-do-drag\u00e3o",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 1],
+          "modifier": 3,
+          "total": 5
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "mesa-do-drag\u00e3o",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "REQUEST",
+            "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "b9c8d7e6f5g4h3j2",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "Thorin \ud83e\ude93",
+              "expression": "1d20+5",
+              "nonce": 2,
+              "targetRound": 1000001,
+              "requestedAt": "2023-09-27T08:29:21.750Z"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "ROUND",
+            "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 4,
+            "type": "RESULT",
+            "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+            "payload": {
+              "seq": 4,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 1],
+              "modifier": 3,
+              "total": 5
+            }
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "id": "proof-valid-interleaved-b",
+      "description": "roll B com ROUND e RESULT de A no meio",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000001,
+          "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+          "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+        },
+        "roll": {
+          "rollId": "b9c8d7e6f5g4h3j2",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 2,
+          "clientSeed": "Thorin \ud83e\ude93",
+          "expression": "1d20+5",
+          "targetRound": 1000001,
+          "requestedAt": "2023-09-27T08:29:21.750Z",
+          "dice": [1],
+          "modifier": 5,
+          "total": 6
+        },
+        "entries": [
+          {
+            "seq": 2,
+            "type": "REQUEST",
+            "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "b9c8d7e6f5g4h3j2",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "Thorin \ud83e\ude93",
+              "expression": "1d20+5",
+              "nonce": 2,
+              "targetRound": 1000001,
+              "requestedAt": "2023-09-27T08:29:21.750Z"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "ROUND",
+            "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 4,
+            "type": "RESULT",
+            "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+            "payload": {
+              "seq": 4,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 1],
+              "modifier": 3,
+              "total": 5
+            }
+          },
+          {
+            "seq": 5,
+            "type": "ROUND",
+            "prevHash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+            "hash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+            "payload": {
+              "seq": 5,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "b9c8d7e6f5g4h3j2",
+              "round": 1000001,
+              "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+              "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+            }
+          },
+          {
+            "seq": 6,
+            "type": "RESULT",
+            "prevHash": "e7d971f914473d3bdadbc1838d0bbf0f75fadff78e82e4d4f18918baa8b5b76d",
+            "hash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "payload": {
+              "seq": 6,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "b9c8d7e6f5g4h3j2",
+              "dice": [1],
+              "modifier": 5,
+              "total": 6
+            }
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "id": "proof-valid-adjacent",
+      "description": "roll C com REQUEST, ROUND e RESULT seguidos",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000002,
+          "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+          "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+        },
+        "roll": {
+          "rollId": "c0d1e2f3g4h5j6k7",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 3,
+          "clientSeed": "c|\"aspas\"",
+          "expression": "4d6-1",
+          "targetRound": 1000002,
+          "requestedAt": "2023-09-27T08:29:26.999Z",
+          "dice": [2, 6, 4, 4],
+          "modifier": -1,
+          "total": 15
+        },
+        "entries": [
+          {
+            "seq": 7,
+            "type": "REQUEST",
+            "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "payload": {
+              "seq": 7,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "c|\"aspas\"",
+              "expression": "4d6-1",
+              "nonce": 3,
+              "targetRound": 1000002,
+              "requestedAt": "2023-09-27T08:29:26.999Z"
+            }
+          },
+          {
+            "seq": 8,
+            "type": "ROUND",
+            "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "payload": {
+              "seq": 8,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "round": 1000002,
+              "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+              "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+            }
+          },
+          {
+            "seq": 9,
+            "type": "RESULT",
+            "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+            "payload": {
+              "seq": 9,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "dice": [2, 6, 4, 4],
+              "modifier": -1,
+              "total": 15
+            }
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "id": "proof-wrong-round",
+      "description": "ROUND usa o round 1000001 em vez do alvo 1000000",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000001,
+          "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+          "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [4, 3],
+          "modifier": 3,
+          "total": 10
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "hash": "1e5c0327a836c7473c688de158b4062431ef1cf56e693f85f8c51280477e5fae",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000001,
+              "randomness": "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff",
+              "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "1e5c0327a836c7473c688de158b4062431ef1cf56e693f85f8c51280477e5fae",
+            "hash": "6bc6da613ace056a9c0250195ecd25ac68c8e1f86442cfd404765e9eb90673a3",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [4, 3],
+              "modifier": 3,
+              "total": 10
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_WRONG_ROUND"
+    },
+    {
+      "id": "proof-beacon-invalid",
+      "description": "assinatura de outro round",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 4],
+          "modifier": 3,
+          "total": 8
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "hash": "5d474fcdbc162be8d32e58d721521a7519fd2b2450afc05cb1dbfc0cce0e4c95",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "a5bd91e5e2d8c0bf51bffdfad87eef34348fd9c0b2df2bee39db90bdef7e1399b1a77bb2fe98b24d84c0936a306c4218"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "5d474fcdbc162be8d32e58d721521a7519fd2b2450afc05cb1dbfc0cce0e4c95",
+            "hash": "bc90fb4d9e7eb8702e90fb66c456e53a2c2530e6f0af0271d2407a7cf57504a2",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 4],
+              "modifier": 3,
+              "total": 8
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_BEACON_INVALID"
+    },
+    {
+      "id": "proof-target-not-future",
+      "description": "pedido no instante exato do round alvo",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:24.000Z",
+          "dice": [1, 4],
+          "modifier": 3,
+          "total": 8
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "814b542188a23103d2e4bd599ad753349103087d703b8207dd046fdb2514c5c6",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:24.000Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "814b542188a23103d2e4bd599ad753349103087d703b8207dd046fdb2514c5c6",
+            "hash": "dffb9ca7654c234017bcab61a60bafabc25d8f90705c278fec71811c72ccaf54",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "dffb9ca7654c234017bcab61a60bafabc25d8f90705c278fec71811c72ccaf54",
+            "hash": "eb3ba0dd4645087b36f94dc2486246d556ddcf9a83b84d16797e63ed97cbea53",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 4],
+              "modifier": 3,
+              "total": 8
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_TARGET_NOT_FUTURE"
+    },
+    {
+      "id": "proof-target-in-past",
+      "description": "pedido 10 s depois do round alvo",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:34.000Z",
+          "dice": [1, 4],
+          "modifier": 3,
+          "total": 8
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "2425c3734ecd02e3a25d66af49e1f3c593fa11cf0b9f3fa1de15d2805a34c11d",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:34.000Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "2425c3734ecd02e3a25d66af49e1f3c593fa11cf0b9f3fa1de15d2805a34c11d",
+            "hash": "251a30da69ea3c5787f1d4368f72a1181e429e5b6f6cf40fc07e37e605a198c8",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "251a30da69ea3c5787f1d4368f72a1181e429e5b6f6cf40fc07e37e605a198c8",
+            "hash": "7e78bb1adea5a810d5b7b97f19047bffe4378643d705e48697e47b6f85e0529e",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 4],
+              "modifier": 3,
+              "total": 8
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_TARGET_NOT_FUTURE"
+    },
+    {
+      "id": "proof-result-mismatch",
+      "description": "RESULT com um dado trocado (hashes refeitos)",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [2, 4],
+          "modifier": 3,
+          "total": 9
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "hash": "4c2fa0f9f4f00d88d111b7d66672f649b78ab2b9e0e0e82f976fcf8a04ac0948",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "4c2fa0f9f4f00d88d111b7d66672f649b78ab2b9e0e0e82f976fcf8a04ac0948",
+            "hash": "3a61bdc44ba947472cce5f982b3e6abe5e3bd575312f2828cdb05589e1b9eedf",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [2, 4],
+              "modifier": 3,
+              "total": 9
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_RESULT_MISMATCH"
+    },
+    {
+      "id": "proof-noncanonical-expression",
+      "description": "express\u00e3o fora da forma can\u00f4nica no REQUEST",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2D6 + 3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 4],
+          "modifier": 3,
+          "total": 8
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "57f63862dcb1e4c68afe67e9b7d0909e12c164c233271f8e6c07cb4a58c23e4c",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2D6 + 3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "57f63862dcb1e4c68afe67e9b7d0909e12c164c233271f8e6c07cb4a58c23e4c",
+            "hash": "33e7e4617f1cdd6fbe6cab9b84aafc22c6c06a77754971ca4f334bd3a2cd6364",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "33e7e4617f1cdd6fbe6cab9b84aafc22c6c06a77754971ca4f334bd3a2cd6364",
+            "hash": "69e8e0431264f21a16dc0d5784de1f0c61fc5601a2eca53b65b176166472628a",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 4],
+              "modifier": 3,
+              "total": 8
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_STRUCTURE"
+    },
+    {
+      "id": "proof-wrong-algorithm",
+      "description": "REQUEST declara dice-v2",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 4],
+          "modifier": 3,
+          "total": 8
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "12bb4e6036a876c129f4f289fcd3a77b6f4bdfec0fd8a3f0ac21d3970c6fab45",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v2",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "ROUND",
+            "prevHash": "12bb4e6036a876c129f4f289fcd3a77b6f4bdfec0fd8a3f0ac21d3970c6fab45",
+            "hash": "2c4ab244e9bff746267ed68ff06c02dfd5673ddb23144a4a2da17497ec81fc5d",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "RESULT",
+            "prevHash": "2c4ab244e9bff746267ed68ff06c02dfd5673ddb23144a4a2da17497ec81fc5d",
+            "hash": "dc0e59c46b82c48bca8eaddd8e19c6dba60bed0a56242a70ae2c4660f91a5f2a",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 4],
+              "modifier": 3,
+              "total": 8
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_STRUCTURE"
+    },
+    {
+      "id": "proof-missing-round",
+      "description": "sem entrada ROUND",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {},
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "seed",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 4],
+          "modifier": 3,
+          "total": 8
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "seed",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "RESULT",
+            "prevHash": "25bb99542e52458942899a457192487ffceecc0ddc5ae69c4d3044e70e5898a8",
+            "hash": "f375c4ee2a62fff07921feff6e1b291bdad58fbb09832666ee78d414c94a6567",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 4],
+              "modifier": 3,
+              "total": 8
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_STRUCTURE"
+    },
+    {
+      "id": "proof-other-session-entry",
+      "description": "entrada de outra mesa no meio",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "mesa-do-drag\u00e3o",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 1],
+          "modifier": 3,
+          "total": 5
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "mesa-do-drag\u00e3o",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "REQUEST",
+            "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "hash": "161d7a506b4e9118f6c4c2bbe14e80d5074c22788f1b1f19d8f13313184f153f",
+            "payload": {
+              "seq": 2,
+              "sessionId": "w4n8p2d6f0h3j7m1",
+              "rollId": "b9c8d7e6f5g4h3j2",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "Thorin \ud83e\ude93",
+              "expression": "1d20+5",
+              "nonce": 2,
+              "targetRound": 1000001,
+              "requestedAt": "2023-09-27T08:29:21.750Z"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "ROUND",
+            "prevHash": "161d7a506b4e9118f6c4c2bbe14e80d5074c22788f1b1f19d8f13313184f153f",
+            "hash": "fd68dc74eef065733a0e2a1893d8a7b7b27d024d4aec70c70d51d643a885eaac",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 4,
+            "type": "RESULT",
+            "prevHash": "fd68dc74eef065733a0e2a1893d8a7b7b27d024d4aec70c70d51d643a885eaac",
+            "hash": "c4fa31559e212741d17a1dc203c2faa656b5d6a1abad3fb5cac04689a8c41cd5",
+            "payload": {
+              "seq": 4,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 1],
+              "modifier": 3,
+              "total": 5
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_STRUCTURE"
+    },
+    {
+      "id": "proof-ends-before-result",
+      "description": "termina no ROUND",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "mesa-do-drag\u00e3o",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z"
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "mesa-do-drag\u00e3o",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 2,
+            "type": "REQUEST",
+            "prevHash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "hash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "payload": {
+              "seq": 2,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "b9c8d7e6f5g4h3j2",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "Thorin \ud83e\ude93",
+              "expression": "1d20+5",
+              "nonce": 2,
+              "targetRound": 1000001,
+              "requestedAt": "2023-09-27T08:29:21.750Z"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "ROUND",
+            "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_STRUCTURE"
+    },
+    {
+      "id": "proof-wrong-drand-chain",
+      "description": "chain hash do drand diferente do quicknet",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "beacon": {
+          "round": 1000002,
+          "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+          "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+        },
+        "roll": {
+          "rollId": "c0d1e2f3g4h5j6k7",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 3,
+          "clientSeed": "c|\"aspas\"",
+          "expression": "4d6-1",
+          "targetRound": 1000002,
+          "requestedAt": "2023-09-27T08:29:26.999Z",
+          "dice": [2, 6, 4, 4],
+          "modifier": -1,
+          "total": 15
+        },
+        "entries": [
+          {
+            "seq": 7,
+            "type": "REQUEST",
+            "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "payload": {
+              "seq": 7,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "c|\"aspas\"",
+              "expression": "4d6-1",
+              "nonce": 3,
+              "targetRound": 1000002,
+              "requestedAt": "2023-09-27T08:29:26.999Z"
+            }
+          },
+          {
+            "seq": 8,
+            "type": "ROUND",
+            "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "payload": {
+              "seq": 8,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "round": 1000002,
+              "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+              "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+            }
+          },
+          {
+            "seq": 9,
+            "type": "RESULT",
+            "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+            "payload": {
+              "seq": 9,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "dice": [2, 6, 4, 4],
+              "modifier": -1,
+              "total": 15
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_STRUCTURE"
+    },
+    {
+      "id": "proof-summary-total",
+      "description": "resumo diz total 99",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000002,
+          "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+          "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+        },
+        "roll": {
+          "rollId": "c0d1e2f3g4h5j6k7",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 3,
+          "clientSeed": "c|\"aspas\"",
+          "expression": "4d6-1",
+          "targetRound": 1000002,
+          "requestedAt": "2023-09-27T08:29:26.999Z",
+          "dice": [2, 6, 4, 4],
+          "modifier": -1,
+          "total": 99
+        },
+        "entries": [
+          {
+            "seq": 7,
+            "type": "REQUEST",
+            "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "payload": {
+              "seq": 7,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "c|\"aspas\"",
+              "expression": "4d6-1",
+              "nonce": 3,
+              "targetRound": 1000002,
+              "requestedAt": "2023-09-27T08:29:26.999Z"
+            }
+          },
+          {
+            "seq": 8,
+            "type": "ROUND",
+            "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "payload": {
+              "seq": 8,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "round": 1000002,
+              "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+              "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+            }
+          },
+          {
+            "seq": 9,
+            "type": "RESULT",
+            "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+            "payload": {
+              "seq": 9,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "dice": [2, 6, 4, 4],
+              "modifier": -1,
+              "total": 15
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_SUMMARY_MISMATCH"
+    },
+    {
+      "id": "proof-summary-randomness",
+      "description": "resumo do beacon com randomness de outro round",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000002,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+        },
+        "roll": {
+          "rollId": "c0d1e2f3g4h5j6k7",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 3,
+          "clientSeed": "c|\"aspas\"",
+          "expression": "4d6-1",
+          "targetRound": 1000002,
+          "requestedAt": "2023-09-27T08:29:26.999Z",
+          "dice": [2, 6, 4, 4],
+          "modifier": -1,
+          "total": 15
+        },
+        "entries": [
+          {
+            "seq": 7,
+            "type": "REQUEST",
+            "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "payload": {
+              "seq": 7,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "c|\"aspas\"",
+              "expression": "4d6-1",
+              "nonce": 3,
+              "targetRound": 1000002,
+              "requestedAt": "2023-09-27T08:29:26.999Z"
+            }
+          },
+          {
+            "seq": 8,
+            "type": "ROUND",
+            "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "payload": {
+              "seq": 8,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "round": 1000002,
+              "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+              "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+            }
+          },
+          {
+            "seq": 9,
+            "type": "RESULT",
+            "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+            "payload": {
+              "seq": 9,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "dice": [2, 6, 4, 4],
+              "modifier": -1,
+              "total": 15
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "PROOF_SUMMARY_MISMATCH"
+    },
+    {
+      "id": "proof-tampered-no-rehash",
+      "description": "total do RESULT alterado sem refazer o hash",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000002,
+          "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+          "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+        },
+        "roll": {
+          "rollId": "c0d1e2f3g4h5j6k7",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 3,
+          "clientSeed": "c|\"aspas\"",
+          "expression": "4d6-1",
+          "targetRound": 1000002,
+          "requestedAt": "2023-09-27T08:29:26.999Z",
+          "dice": [2, 6, 4, 4],
+          "modifier": -1,
+          "total": 24
+        },
+        "entries": [
+          {
+            "seq": 7,
+            "type": "REQUEST",
+            "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "payload": {
+              "seq": 7,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "c|\"aspas\"",
+              "expression": "4d6-1",
+              "nonce": 3,
+              "targetRound": 1000002,
+              "requestedAt": "2023-09-27T08:29:26.999Z"
+            }
+          },
+          {
+            "seq": 8,
+            "type": "ROUND",
+            "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "payload": {
+              "seq": 8,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "round": 1000002,
+              "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+              "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+            }
+          },
+          {
+            "seq": 9,
+            "type": "RESULT",
+            "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+            "payload": {
+              "seq": 9,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "dice": [2, 6, 4, 4],
+              "modifier": -1,
+              "total": 24
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "CHAIN_HASH_MISMATCH"
+    },
+    {
+      "id": "proof-missing-middle-entry",
+      "description": "entrada do meio removida",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000000,
+          "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+          "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+        },
+        "roll": {
+          "rollId": "a1b2c3d4e5f6g7h8",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 1,
+          "clientSeed": "mesa-do-drag\u00e3o",
+          "expression": "2d6+3",
+          "targetRound": 1000000,
+          "requestedAt": "2023-09-27T08:29:19.500Z",
+          "dice": [1, 1],
+          "modifier": 3,
+          "total": 5
+        },
+        "entries": [
+          {
+            "seq": 1,
+            "type": "REQUEST",
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "b529a31fb7c585c48a35637efcc41cde680bdd527f08aa29ec887752bb6d8994",
+            "payload": {
+              "seq": 1,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "mesa-do-drag\u00e3o",
+              "expression": "2d6+3",
+              "nonce": 1,
+              "targetRound": 1000000,
+              "requestedAt": "2023-09-27T08:29:19.500Z"
+            }
+          },
+          {
+            "seq": 3,
+            "type": "ROUND",
+            "prevHash": "c3c7a98a127c57761796e1430c942a20bb1c8612c3f61fe091444ed608ff345f",
+            "hash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "payload": {
+              "seq": 3,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "round": 1000000,
+              "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+              "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"
+            }
+          },
+          {
+            "seq": 4,
+            "type": "RESULT",
+            "prevHash": "75431f97f79c618f3630138e0b9c48d47a4386f56e01c224915e940b44d28a05",
+            "hash": "f62afa446e335cd9f3e2b209a1f0f7abf3917f600daf974bdd458ad60f82c153",
+            "payload": {
+              "seq": 4,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "a1b2c3d4e5f6g7h8",
+              "dice": [1, 1],
+              "modifier": 3,
+              "total": 5
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "CHAIN_SEQ_GAP"
+    },
+    {
+      "id": "proof-float-nonce",
+      "description": "nonce n\u00e3o inteiro",
+      "proof": {
+        "algorithm": "dice-v1",
+        "chainFormat": "chain-v1",
+        "drand": {
+          "network": "quicknet",
+          "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+        },
+        "beacon": {
+          "round": 1000002,
+          "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+          "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+        },
+        "roll": {
+          "rollId": "c0d1e2f3g4h5j6k7",
+          "sessionId": "kq1t9m3x7c2a8z5r",
+          "nonce": 3.5,
+          "clientSeed": "c|\"aspas\"",
+          "expression": "4d6-1",
+          "targetRound": 1000002,
+          "requestedAt": "2023-09-27T08:29:26.999Z",
+          "dice": [2, 6, 4, 4],
+          "modifier": -1,
+          "total": 15
+        },
+        "entries": [
+          {
+            "seq": 7,
+            "type": "REQUEST",
+            "prevHash": "88d17e3746eb5fac469d1560c5f986cab366799285bc98ce2708dbbe0ed1698d",
+            "hash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "payload": {
+              "seq": 7,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "algorithm": "dice-v1",
+              "drandChainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+              "clientSeed": "c|\"aspas\"",
+              "expression": "4d6-1",
+              "nonce": 3.5,
+              "targetRound": 1000002,
+              "requestedAt": "2023-09-27T08:29:26.999Z"
+            }
+          },
+          {
+            "seq": 8,
+            "type": "ROUND",
+            "prevHash": "d57aa5c041c90f1926910cd85e59a83fb6ab16d05d048f7100ca0c83bdc3cb6c",
+            "hash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "payload": {
+              "seq": 8,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "round": 1000002,
+              "randomness": "018e0e0c9e0d7906762eca633fab3ec5e97ee4cb8949e4eb9ee589160b49263d",
+              "signature": "a96e2a020098645aa4f912dcca317a67e98c39909fe1a037798fb503f04272b8153bab438c7e8d298593af1bdf29e5c5"
+            }
+          },
+          {
+            "seq": 9,
+            "type": "RESULT",
+            "prevHash": "bcaa1c5bc72522e578d9178ac14a690d50006e022988865ab8cf75200595bf6d",
+            "hash": "b0acb256940d5e704cc44ec2f045d0c7e0f228e8c1ecbb642dadc7feae2db95c",
+            "payload": {
+              "seq": 9,
+              "sessionId": "kq1t9m3x7c2a8z5r",
+              "rollId": "c0d1e2f3g4h5j6k7",
+              "dice": [2, 6, 4, 4],
+              "modifier": -1,
+              "total": 15
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "CHAIN_STRUCTURE"
+    }
   ]
 }
