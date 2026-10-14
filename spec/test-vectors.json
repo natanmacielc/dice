@@ -1,0 +1,984 @@
+{
+  "algorithm": "dice-v1",
+  "comment": "Gerado por tools/vectorgen/GenerateVectors.java. Ver spec/ALGORITHM.md.",
+  "drand": {
+    "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+    "network": "quicknet"
+  },
+  "beaconVectors": [
+    {
+      "id": "quicknet-round-1",
+      "round": 1,
+      "signature": "b55e7cb2d5c613ee0b2e28d6750aabbb78c39dcc96bd9d38c2c2e12198df95571de8e8e402a0cc48871c7089a2b3af4b",
+      "randomness": "1466a6cd24e327188770752f6134001c64d6efcc590ccc26b721611ad96f165a",
+      "valid": true
+    },
+    {
+      "id": "quicknet-round-1000000",
+      "round": 1000000,
+      "signature": "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "valid": true
+    },
+    {
+      "id": "quicknet-round-12345678",
+      "round": 12345678,
+      "signature": "b0a199d51b7c29117d2155c4fc2322dbacd9d1e1f11da5b5c0e4e19947e4aaf634970e85eceef450681d27baa3a03f20",
+      "randomness": "47175ae9652cb6704c2b509e5d2aa03b609e67039251ff1e162282136c515bf0",
+      "valid": true
+    },
+    {
+      "id": "tampered-signature",
+      "round": 1000000,
+      "signature": "93ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "valid": false
+    },
+    {
+      "id": "randomness-from-other-round",
+      "round": 1,
+      "signature": "b55e7cb2d5c613ee0b2e28d6750aabbb78c39dcc96bd9d38c2c2e12198df95571de8e8e402a0cc48871c7089a2b3af4b",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "valid": false
+    }
+  ],
+  "rollVectors": [
+    {
+      "id": "d4-basic",
+      "description": "um d4",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 1,
+      "expression": "1d4",
+      "expected": {
+        "expression": "1d4",
+        "dice": [3],
+        "modifier": 0,
+        "total": 3,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "d6-basic",
+      "description": "um d6",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 2,
+      "expression": "1d6",
+      "expected": {
+        "expression": "1d6",
+        "dice": [6],
+        "modifier": 0,
+        "total": 6,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "d8-basic",
+      "description": "um d8",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 3,
+      "expression": "1d8",
+      "expected": {
+        "expression": "1d8",
+        "dice": [7],
+        "modifier": 0,
+        "total": 7,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "d10-basic",
+      "description": "um d10",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 4,
+      "expression": "1d10",
+      "expected": {
+        "expression": "1d10",
+        "dice": [7],
+        "modifier": 0,
+        "total": 7,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "d12-basic",
+      "description": "um d12",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 5,
+      "expression": "1d12",
+      "expected": {
+        "expression": "1d12",
+        "dice": [2],
+        "modifier": 0,
+        "total": 2,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "d20-basic",
+      "description": "um d20",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 6,
+      "expression": "1d20",
+      "expected": {
+        "expression": "1d20",
+        "dice": [9],
+        "modifier": 0,
+        "total": 9,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "d100-basic",
+      "description": "um d100",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mesa-do-dragao",
+      "clientSeedUtf8Hex": "6d6573612d646f2d64726167616f",
+      "nonce": 7,
+      "expression": "1d100",
+      "expected": {
+        "expression": "1d100",
+        "dice": [79],
+        "modifier": 0,
+        "total": 79,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "block-boundary-20d6",
+      "description": "20 dados cruzam os blocos c=0, 1 e 2",
+      "randomness": "1466a6cd24e327188770752f6134001c64d6efcc590ccc26b721611ad96f165a",
+      "clientSeed": "fronteira",
+      "clientSeedUtf8Hex": "66726f6e7465697261",
+      "nonce": 0,
+      "expression": "20d6",
+      "expected": {
+        "expression": "20d6",
+        "dice": [2, 2, 4, 5, 6, 4, 4, 2, 5, 5, 3, 1, 4, 3, 6, 1, 3, 3, 2, 3],
+        "modifier": 0,
+        "total": 68,
+        "wordsConsumed": 20,
+        "rejections": []
+      }
+    },
+    {
+      "id": "block-boundary-20d100",
+      "description": "20 dados cruzam os blocos c=0, 1 e 2",
+      "randomness": "47175ae9652cb6704c2b509e5d2aa03b609e67039251ff1e162282136c515bf0",
+      "clientSeed": "fronteira",
+      "clientSeedUtf8Hex": "66726f6e7465697261",
+      "nonce": 0,
+      "expression": "20d100",
+      "expected": {
+        "expression": "20d100",
+        "dice": [29, 78, 28, 58, 20, 93, 39, 13, 86, 77, 85, 93, 87, 55, 43, 59, 10, 100, 28, 7],
+        "modifier": 0,
+        "total": 1088,
+        "wordsConsumed": 20,
+        "rejections": []
+      }
+    },
+    {
+      "id": "max-dice-max-modifier",
+      "description": "20d20+100",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "limites",
+      "clientSeedUtf8Hex": "6c696d69746573",
+      "nonce": 8,
+      "expression": "20d20+100",
+      "expected": {
+        "expression": "20d20+100",
+        "dice": [4, 7, 7, 18, 4, 11, 10, 4, 8, 4, 12, 13, 2, 4, 6, 13, 12, 18, 20, 1],
+        "modifier": 100,
+        "total": 278,
+        "wordsConsumed": 20,
+        "rejections": []
+      }
+    },
+    {
+      "id": "modifier-plus-100",
+      "description": "M = +100",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mod",
+      "clientSeedUtf8Hex": "6d6f64",
+      "nonce": 10,
+      "expression": "3d8+100",
+      "expected": {
+        "expression": "3d8+100",
+        "dice": [5, 5, 1],
+        "modifier": 100,
+        "total": 111,
+        "wordsConsumed": 3,
+        "rejections": []
+      }
+    },
+    {
+      "id": "modifier-minus-100",
+      "description": "M = -100, total negativo",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mod",
+      "clientSeedUtf8Hex": "6d6f64",
+      "nonce": 11,
+      "expression": "1d4-100",
+      "expected": {
+        "expression": "1d4-100",
+        "dice": [2],
+        "modifier": -100,
+        "total": -98,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "modifier-minus-zero",
+      "description": "-0 vira forma sem modificador",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mod",
+      "clientSeedUtf8Hex": "6d6f64",
+      "nonce": 12,
+      "expression": "2d6-0",
+      "expected": {
+        "expression": "2d6",
+        "dice": [1, 4],
+        "modifier": 0,
+        "total": 5,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "modifier-plus-zero",
+      "description": "+0 vira forma sem modificador",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "mod",
+      "clientSeedUtf8Hex": "6d6f64",
+      "nonce": 12,
+      "expression": "2d6+0",
+      "expected": {
+        "expression": "2d6",
+        "dice": [1, 4],
+        "modifier": 0,
+        "total": 5,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-1-byte",
+      "description": "seed de 1 byte",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "x",
+      "clientSeedUtf8Hex": "78",
+      "nonce": 20,
+      "expression": "2d20",
+      "expected": {
+        "expression": "2d20",
+        "dice": [8, 6],
+        "modifier": 0,
+        "total": 14,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-64-bytes-ascii",
+      "description": "seed de 64 bytes ASCII (limite)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "clientSeedUtf8Hex": "30313233343536373839616263646566303132333435363738396162636465663031323334353637383961626364656630313233343536373839616263646566",
+      "nonce": 21,
+      "expression": "2d20",
+      "expected": {
+        "expression": "2d20",
+        "dice": [2, 15],
+        "modifier": 0,
+        "total": 17,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-64-bytes-emoji",
+      "description": "16 emojis de 4 bytes = 64 bytes",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00",
+      "clientSeedUtf8Hex": "f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880f09f9880",
+      "nonce": 22,
+      "expression": "2d20",
+      "expected": {
+        "expression": "2d20",
+        "dice": [8, 18],
+        "modifier": 0,
+        "total": 26,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-accents",
+      "description": "acentos em UTF-8",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "A\u00e7\u00e3o cr\u00edtica! \u00f1 \u00fc",
+      "clientSeedUtf8Hex": "41c3a7c3a36f206372c3ad746963612120c3b120c3bc",
+      "nonce": 23,
+      "expression": "2d20",
+      "expected": {
+        "expression": "2d20",
+        "dice": [12, 19],
+        "modifier": 0,
+        "total": 31,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-nfc",
+      "description": "\u00e9 pr\u00e9-composto (U+00E9)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "caf\u00e9",
+      "clientSeedUtf8Hex": "636166c3a9",
+      "nonce": 24,
+      "expression": "1d100",
+      "expected": {
+        "expression": "1d100",
+        "dice": [35],
+        "modifier": 0,
+        "total": 35,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-nfd",
+      "description": "e + acento combinante (U+0065 U+0301): sem normaliza\u00e7\u00e3o, resultado difere de seed-nfc",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "cafe\u0301",
+      "clientSeedUtf8Hex": "63616665cc81",
+      "nonce": 24,
+      "expression": "1d100",
+      "expected": {
+        "expression": "1d100",
+        "dice": [55],
+        "modifier": 0,
+        "total": 55,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-with-pipe",
+      "description": "'|' na seed n\u00e3o gera ambiguidade",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "a|b|1",
+      "clientSeedUtf8Hex": "617c627c31",
+      "nonce": 25,
+      "expression": "2d20",
+      "expected": {
+        "expression": "2d20",
+        "dice": [17, 4],
+        "modifier": 0,
+        "total": 21,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "seed-with-spaces",
+      "description": "espa\u00e7os nas pontas s\u00e3o preservados",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": " espa\u00e7o ",
+      "clientSeedUtf8Hex": "2065737061c3a76f20",
+      "nonce": 26,
+      "expression": "2d20",
+      "expected": {
+        "expression": "2d20",
+        "dice": [5, 16],
+        "modifier": 0,
+        "total": 21,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "nonce-zero",
+      "description": "nonce 0",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "nonce",
+      "clientSeedUtf8Hex": "6e6f6e6365",
+      "nonce": 0,
+      "expression": "3d6",
+      "expected": {
+        "expression": "3d6",
+        "dice": [3, 3, 5],
+        "modifier": 0,
+        "total": 11,
+        "wordsConsumed": 3,
+        "rejections": []
+      }
+    },
+    {
+      "id": "nonce-max",
+      "description": "nonce 2^53 - 1",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "nonce",
+      "clientSeedUtf8Hex": "6e6f6e6365",
+      "nonce": 9007199254740991,
+      "expression": "3d6",
+      "expected": {
+        "expression": "3d6",
+        "dice": [2, 4, 2],
+        "modifier": 0,
+        "total": 8,
+        "wordsConsumed": 3,
+        "rejections": []
+      }
+    },
+    {
+      "id": "real-round-1",
+      "description": "randomness do round 1",
+      "randomness": "1466a6cd24e327188770752f6134001c64d6efcc590ccc26b721611ad96f165a",
+      "clientSeed": "mesa",
+      "clientSeedUtf8Hex": "6d657361",
+      "nonce": 1,
+      "expression": "4d6",
+      "expected": {
+        "expression": "4d6",
+        "dice": [4, 1, 1, 4],
+        "modifier": 0,
+        "total": 10,
+        "wordsConsumed": 4,
+        "rejections": []
+      }
+    },
+    {
+      "id": "real-round-12345678",
+      "description": "randomness do round 12345678",
+      "randomness": "47175ae9652cb6704c2b509e5d2aa03b609e67039251ff1e162282136c515bf0",
+      "clientSeed": "mesa",
+      "clientSeedUtf8Hex": "6d657361",
+      "nonce": 1,
+      "expression": "4d6",
+      "expected": {
+        "expression": "4d6",
+        "dice": [3, 1, 3, 5],
+        "modifier": 0,
+        "total": 12,
+        "wordsConsumed": 4,
+        "rejections": []
+      }
+    },
+    {
+      "id": "synthetic-zeros",
+      "description": "randomness s\u00f3 com zeros",
+      "randomness": "0000000000000000000000000000000000000000000000000000000000000000",
+      "clientSeed": "sint\u00e9tico",
+      "clientSeedUtf8Hex": "73696e74c3a97469636f",
+      "nonce": 1,
+      "expression": "5d12",
+      "expected": {
+        "expression": "5d12",
+        "dice": [11, 2, 2, 1, 6],
+        "modifier": 0,
+        "total": 22,
+        "wordsConsumed": 5,
+        "rejections": []
+      }
+    },
+    {
+      "id": "synthetic-ff",
+      "description": "randomness s\u00f3 com f",
+      "randomness": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "clientSeed": "sint\u00e9tico",
+      "clientSeedUtf8Hex": "73696e74c3a97469636f",
+      "nonce": 1,
+      "expression": "5d12",
+      "expected": {
+        "expression": "5d12",
+        "dice": [7, 7, 3, 5, 6],
+        "modifier": 0,
+        "total": 28,
+        "wordsConsumed": 5,
+        "rejections": []
+      }
+    },
+    {
+      "id": "lenient-no-count",
+      "description": "'d20' = 1d20",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "leniente",
+      "clientSeedUtf8Hex": "6c656e69656e7465",
+      "nonce": 30,
+      "expression": "d20",
+      "expected": {
+        "expression": "1d20",
+        "dice": [4],
+        "modifier": 0,
+        "total": 4,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "lenient-uppercase",
+      "description": "'D' mai\u00fasculo",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "leniente",
+      "clientSeedUtf8Hex": "6c656e69656e7465",
+      "nonce": 30,
+      "expression": "1D20",
+      "expected": {
+        "expression": "1d20",
+        "dice": [4],
+        "modifier": 0,
+        "total": 4,
+        "wordsConsumed": 1,
+        "rejections": []
+      }
+    },
+    {
+      "id": "lenient-spaces",
+      "description": "espa\u00e7os nas pontas e em volta do sinal",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "leniente",
+      "clientSeedUtf8Hex": "6c656e69656e7465",
+      "nonce": 31,
+      "expression": " 2d6 + 3 ",
+      "expected": {
+        "expression": "2d6+3",
+        "dice": [1, 4],
+        "modifier": 3,
+        "total": 8,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "lenient-tabs",
+      "description": "tabs",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "leniente",
+      "clientSeedUtf8Hex": "6c656e69656e7465",
+      "nonce": 32,
+      "expression": "\t4d10\t-\t2",
+      "expected": {
+        "expression": "4d10-2",
+        "dice": [3, 5, 1, 6],
+        "modifier": -2,
+        "total": 13,
+        "wordsConsumed": 4,
+        "rejections": []
+      }
+    },
+    {
+      "id": "lenient-minus",
+      "description": "modificador negativo",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "leniente",
+      "clientSeedUtf8Hex": "6c656e69656e7465",
+      "nonce": 33,
+      "expression": "2d6-1",
+      "expected": {
+        "expression": "2d6-1",
+        "dice": [5, 4],
+        "modifier": -1,
+        "total": 8,
+        "wordsConsumed": 2,
+        "rejections": []
+      }
+    },
+    {
+      "id": "rejection-d100",
+      "description": "rejei\u00e7\u00e3o real em d100 (limite 2^32 - 96)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "rej-d100-1887002",
+      "clientSeedUtf8Hex": "72656a2d643130302d31383837303032",
+      "nonce": 1,
+      "expression": "20d100",
+      "expected": {
+        "expression": "20d100",
+        "dice": [60, 32, 2, 19, 21, 79, 64, 28, 44, 28, 67, 45, 86, 33, 91, 3, 72, 82, 80, 69],
+        "modifier": 0,
+        "total": 1005,
+        "wordsConsumed": 21,
+        "rejections": [
+          {
+            "wordIndex": 2,
+            "value": 4294967219
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejection-d20",
+      "description": "rejei\u00e7\u00e3o real em d20 (limite 2^32 - 16)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "rej-d20-4550617",
+      "clientSeedUtf8Hex": "72656a2d6432302d34353530363137",
+      "nonce": 1,
+      "expression": "20d20",
+      "expected": {
+        "expression": "20d20",
+        "dice": [11, 14, 16, 14, 5, 18, 2, 11, 2, 10, 19, 4, 1, 12, 9, 4, 9, 8, 9, 6],
+        "modifier": 0,
+        "total": 184,
+        "wordsConsumed": 21,
+        "rejections": [
+          {
+            "wordIndex": 19,
+            "value": 4294967286
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejection-d10",
+      "description": "rejei\u00e7\u00e3o real em d10 (limite 2^32 - 6)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "rej-d10-37378448",
+      "clientSeedUtf8Hex": "72656a2d6431302d3337333738343438",
+      "nonce": 1,
+      "expression": "20d10",
+      "expected": {
+        "expression": "20d10",
+        "dice": [10, 8, 3, 5, 5, 3, 6, 4, 3, 5, 10, 6, 9, 4, 9, 6, 8, 9, 9, 8],
+        "modifier": 0,
+        "total": 130,
+        "wordsConsumed": 21,
+        "rejections": [
+          {
+            "wordIndex": 1,
+            "value": 4294967291
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejection-d12",
+      "description": "rejei\u00e7\u00e3o real em d12 (limite 2^32 - 4)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "rej-d12-44219600",
+      "clientSeedUtf8Hex": "72656a2d6431322d3434323139363030",
+      "nonce": 1,
+      "expression": "20d12",
+      "expected": {
+        "expression": "20d12",
+        "dice": [1, 11, 9, 6, 6, 8, 12, 1, 7, 1, 5, 11, 10, 2, 2, 1, 2, 4, 1, 5],
+        "modifier": 0,
+        "total": 105,
+        "wordsConsumed": 21,
+        "rejections": [
+          {
+            "wordIndex": 10,
+            "value": 4294967295
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejection-d6",
+      "description": "rejei\u00e7\u00e3o real em d6 (limite 2^32 - 4)",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "rej-d6-84230335",
+      "clientSeedUtf8Hex": "72656a2d64362d3834323330333335",
+      "nonce": 1,
+      "expression": "20d6",
+      "expected": {
+        "expression": "20d6",
+        "dice": [1, 3, 4, 4, 1, 4, 4, 3, 5, 4, 1, 5, 6, 6, 3, 4, 5, 1, 3, 2],
+        "modifier": 0,
+        "total": 69,
+        "wordsConsumed": 21,
+        "rejections": [
+          {
+            "wordIndex": 3,
+            "value": 4294967292
+          }
+        ]
+      }
+    }
+  ],
+  "errorVectors": [
+    {
+      "id": "randomness-uppercase",
+      "randomness": "B22AAD4794F7451896F7A371AA46106FD84D919F3F569ACD5B2FDDF1D1440AF3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "RANDOMNESS_FORMAT"
+    },
+    {
+      "id": "randomness-63-chars",
+      "randomness": "22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "RANDOMNESS_FORMAT"
+    },
+    {
+      "id": "randomness-65-chars",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af30",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "RANDOMNESS_FORMAT"
+    },
+    {
+      "id": "randomness-non-hex",
+      "randomness": "g22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "RANDOMNESS_FORMAT"
+    },
+    {
+      "id": "randomness-empty",
+      "randomness": "",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "RANDOMNESS_FORMAT"
+    },
+    {
+      "id": "seed-empty",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_EMPTY"
+    },
+    {
+      "id": "seed-65-bytes",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_TOO_LONG"
+    },
+    {
+      "id": "seed-66-bytes-multibyte",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_TOO_LONG"
+    },
+    {
+      "id": "seed-newline",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "a\nb",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_CONTROL_CHAR"
+    },
+    {
+      "id": "seed-nul",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "\u0000",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_CONTROL_CHAR"
+    },
+    {
+      "id": "seed-tab",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "a\tb",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_CONTROL_CHAR"
+    },
+    {
+      "id": "seed-del",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "a\u007f",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_CONTROL_CHAR"
+    },
+    {
+      "id": "seed-lone-high-surrogate",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "a\ud800",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_INVALID_UTF8"
+    },
+    {
+      "id": "seed-lone-low-surrogate",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "\udc00a",
+      "nonce": 1,
+      "expression": "1d20",
+      "error": "SEED_INVALID_UTF8"
+    },
+    {
+      "id": "nonce-negative",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": -1,
+      "expression": "1d20",
+      "error": "NONCE_OUT_OF_RANGE"
+    },
+    {
+      "id": "nonce-2-pow-53",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 9007199254740992,
+      "expression": "1d20",
+      "error": "NONCE_OUT_OF_RANGE"
+    },
+    {
+      "id": "expr-empty",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-garbage",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "abc",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-leading-zero",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "01d6",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-double-sign",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "2d6--1",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-unicode-digit",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "\uff11d6",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-space-inside-term",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "2 d6",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-trailing-newline",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "2d6\n",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-three-digit-count",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "100d6",
+      "error": "INVALID_EXPRESSION"
+    },
+    {
+      "id": "expr-zero-dice",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "0d6",
+      "error": "DICE_COUNT_OUT_OF_RANGE"
+    },
+    {
+      "id": "expr-21-dice",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "21d6",
+      "error": "DICE_COUNT_OUT_OF_RANGE"
+    },
+    {
+      "id": "expr-d7",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d7",
+      "error": "UNSUPPORTED_DIE"
+    },
+    {
+      "id": "expr-d0",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "1d0",
+      "error": "UNSUPPORTED_DIE"
+    },
+    {
+      "id": "expr-modifier-101",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "2d6+101",
+      "error": "MODIFIER_OUT_OF_RANGE"
+    },
+    {
+      "id": "expr-modifier-minus-101",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": 1,
+      "expression": "2d6-101",
+      "error": "MODIFIER_OUT_OF_RANGE"
+    },
+    {
+      "id": "order-randomness-first",
+      "randomness": "bad",
+      "clientSeed": "",
+      "nonce": -1,
+      "expression": "0d0",
+      "error": "RANDOMNESS_FORMAT"
+    },
+    {
+      "id": "order-seed-before-nonce",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "",
+      "nonce": -1,
+      "expression": "0d0",
+      "error": "SEED_EMPTY"
+    },
+    {
+      "id": "order-nonce-before-expression",
+      "randomness": "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3",
+      "clientSeed": "s",
+      "nonce": -1,
+      "expression": "0d0",
+      "error": "NONCE_OUT_OF_RANGE"
+    }
+  ]
+}
