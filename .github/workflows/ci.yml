@@ -33,6 +33,25 @@ jobs:
           java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json
           git diff --exit-code spec/test-vectors.json
 
+  infra:
+    name: Infra (CDK assertions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: corretto
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      # O CDK (jsii) roda sobre o Node. Nenhuma credencial AWS: só testes do template.
+      - run: ./mvnw -B -ntp -f infra/pom.xml verify
+
   python:
     name: Python verifier
     runs-on: ubuntu-latest
