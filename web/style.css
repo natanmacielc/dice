@@ -134,7 +134,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .die.is-max svg { filter: drop-shadow(0 0 18px var(--amber)); }
 .die.is-min .die-face { fill: var(--fail); }
 .die.is-morphing .die-spin { animation: morph-spin .52s cubic-bezier(.3, 1.4, .5, 1); }
-.die.is-morphing .die-facets { opacity: 0; }
+.die.facets-out .die-facets { opacity: 0; }
 .die.is-tumbling .die-spin { animation: tumble var(--tumble-ms, 500ms) linear var(--tumble-delay, 0ms) infinite; }
 .die.is-tumbling .die-face { animation: flicker .25s steps(2) infinite; }
 .die.is-landing .die-spin { animation: land .65s cubic-bezier(.2, 1.5, .4, 1); }

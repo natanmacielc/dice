@@ -137,6 +137,7 @@ export class Die {
   }
 
   draw(points) {
+    this.drawn = points;
     const d = toPath(points);
     this.body.setAttribute('d', d);
     this.shine.setAttribute('d', d);
@@ -155,36 +156,47 @@ export class Die {
     this.setFace(this.sides === 100 ? '%' : this.sides, 'is-idle');
   }
 
-  /** Troca o número de lados com morph do contorno. */
+  /** Troca o número de lados com morph do contorno. Um morph novo interrompe o anterior. */
   morphTo(sides) {
     if (sides === this.sides) return;
-    const from = this.points;
+    const from = this.drawn;
     const to = POINTS[sides];
+    const token = (this.morphToken = (this.morphToken ?? 0) + 1);
     this.sides = sides;
     this.points = to;
     this.color(sides);
-    if (reducedMotion()) {
-      this.draw(to);
+    const showNewFacets = () => {
       this.facets.setAttribute('d', SHAPES[sides].facets);
       this.idle();
+      this.el.classList.remove('facets-out');
+    };
+    if (reducedMotion()) {
+      this.el.classList.remove('is-morphing', 'facets-out');
+      this.draw(to);
+      showNewFacets();
       return;
     }
     this.el.classList.remove('is-morphing');
-    void this.el.offsetWidth; // reinicia a animação
-    this.el.classList.add('is-morphing');
+    void this.el.offsetWidth; // reinicia a animação do giro
+    this.el.classList.add('is-morphing', 'facets-out');
     const start = performance.now();
     const duration = 520;
     let swapped = false;
     const frame = (now) => {
-      const t = Math.min(1, (now - start) / duration);
+      if (token !== this.morphToken) return; // outro morph assumiu
+      const t = Math.min(1, Math.max(0, (now - start) / duration));
       const e = easeOutBack(t);
       this.draw(from.map(([x, y], i) => [x + (to[i][0] - x) * e, y + (to[i][1] - y) * e]));
       if (!swapped && t > 0.45) {
         swapped = true;
-        this.facets.setAttribute('d', SHAPES[sides].facets);
-        this.idle();
+        showNewFacets(); // as facetas do dado novo entram com fade (transition no CSS)
       }
-      if (t < 1) requestAnimationFrame(frame);
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        this.draw(to);
+        this.el.classList.remove('is-morphing');
+      }
     };
     requestAnimationFrame(frame);
   }
