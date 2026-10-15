@@ -10,7 +10,7 @@ Site estático e verificador em JavaScript, que busca o round direto no drand. T
 | `confianca.html`, `confianca.js` | "Por que confiar?": explicação e conferência de qualquer rolagem, com o passo a passo da conta |
 | `roll.js` | página `/r/{rollId}` (o HTML vem do template Qute em `dice-app`) |
 | `ui.js` | dados em SVG, animações, diálogos e checklist (sem regra de negócio, sem innerHTML) |
-| `api.js` | chamadas à API e verificação no navegador (o drand-client só carrega quando precisa) |
+| `api.js` | chamadas à API (sob `/api`, POST com `x-amz-content-sha256`) e verificação no navegador (o drand-client só carrega quando precisa) |
 | `page-logic.js` | lógica pura, testada no Node |
 | `verifier/` | verificadores do dice-v1, da chain-v1 e da chain-v2 (fonte da verdade no navegador) |
 | `fonts/`, `vendor/` | fonte e drand-client vendorizados, com origem e SHA-256 |
