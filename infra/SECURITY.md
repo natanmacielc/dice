@@ -18,7 +18,7 @@ Status: ✅ feito e coberto por teste · ⚠️ risco aceito no dev · ⏳ pende
 - ✅ **TLS 1.2+ e HTTPS obrigatório** no CloudFront; certificado ACM validado por DNS. (`distributionServesTheDomainOverModernTls`, `certificateIsDnsValidatedInUsEast1`)
 - ✅ **Headers de segurança em toda resposta**: CSP (`'self'` + endpoints do drand), HSTS 1 ano, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`. (`securityHeadersOnEveryResponse`)
 - ✅ **API sem cache no CloudFront** e sem repassar o `Host`.
-- ✅ **WAF com limite por IP** (plano Free do CloudFront): 1000 pedidos/5 min em tudo, 300/5 min em `/api/*`, bloqueio com 429; lista de IPs de má reputação da AWS. (`wafLimitsEachIpAndBlocksWith429`)
+- ✅ **WAF com limite por IP** (plano Free do CloudFront): 1000 pedidos/5 min em tudo, 300/5 min em `/api/*`, bloqueio padrão (403, o plano Free não aceita resposta customizada); lista de IPs de má reputação da AWS. (`wafLimitsEachIpWithDefaultBlock`)
 - ✅ **Origem fechada.** Sem API Gateway: a Function URL exige IAM e só a distribuição (OAC, `SourceArn`) pode chamá-la; `lambda:InvokeFunction` só via URL. (`noApiGatewayAndTheFunctionUrlRequiresIam`, `onlyThisDistributionMayInvokeTheFunctionUrl`; o smoke confere o 403 da URL direta)
 - ✅ **Teto de custo.** Plano flat-rate Free (sem excedente), DynamoDB provisionado na cota gratuita sem autoscaling (`ledgerCapacityIsCappedAtTheFreeTier`), corpo de até 16 KB, kill switch que zera a concorrência do app acima de 10 mil invocações ou 1.200 s de execução por hora (`usageAlarmsTurnTheAppOffThroughTheKillSwitch`, `killSwitchCanOnlyZeroTheAppConcurrency`) e orçamento de US$ 1 com aviso por e-mail.
 - ✅ **Superfície mínima da API.** Só as 6 rotas usadas, sem `$default`. (`apiHasOnlyExplicitRoutes`)

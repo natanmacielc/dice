@@ -19,6 +19,8 @@ test('mensagens de erro em português pelo código da API', () => {
   assert.equal(describeError(null, 502), 'Erro inesperado (HTTP 502).');
   assert.equal(describeError({ error: 'SERVER_BUSY' }, 503), 'O servidor está no limite agora. Tente de novo em instantes.');
   assert.match(describeError(null, 429), /Muitos pedidos/);
+  assert.match(describeError(null, 403), /Muitos pedidos/);
+  assert.equal(describeError({ error: 'X', message: 'm' }, 403), 'm');
 });
 
 test('hash do corpo para o x-amz-content-sha256 (bytes UTF-8)', async () => {

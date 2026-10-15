@@ -60,7 +60,7 @@ public class DiceCertStack extends Stack {
 
     /**
      * Três das cinco regras do plano Free do CloudFront. Pedido bloqueado não conta na franquia do plano;
-     * o bloqueio por limite responde 429 (a web mostra "espere alguns minutos").
+     * o bloqueio responde 403 sem JSON (a web mostra "espere alguns minutos").
      */
     private CfnWebACL webAcl() {
         List<CfnWebACL.RuleProperty> rules = new ArrayList<>();
@@ -107,10 +107,9 @@ public class DiceCertStack extends Stack {
                 .name(name)
                 .priority(priority)
                 .statement(CfnWebACL.StatementProperty.builder().rateBasedStatement(rate.build()).build())
+                // Bloqueio padrão (403): resposta customizada (429) não existe no plano Free e o impede.
                 .action(CfnWebACL.RuleActionProperty.builder()
-                        .block(CfnWebACL.BlockActionProperty.builder()
-                                .customResponse(CfnWebACL.CustomResponseProperty.builder().responseCode(429).build())
-                                .build())
+                        .block(CfnWebACL.BlockActionProperty.builder().build())
                         .build())
                 .visibilityConfig(visibility(name))
                 .build();

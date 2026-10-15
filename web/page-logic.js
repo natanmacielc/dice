@@ -93,8 +93,9 @@ export function historyLoadError(error) {
 
 export function describeError(body, status) {
   if (body && ERROR_MESSAGES[body.error]) return ERROR_MESSAGES[body.error];
-  // 429 vem do WAF (limite por IP), sem corpo da API.
-  if (!body && status === 429) return 'Muitos pedidos deste endereço. Espere alguns minutos e tente de novo.';
+  // 403 sem corpo da API vem do WAF (limite por IP ou IP de má reputação): o plano Free do CloudFront
+  // não deixa trocar o código do bloqueio. 429 fica para o caso de o plano mudar.
+  if (!body && (status === 403 || status === 429)) return 'Muitos pedidos deste endereço. Espere alguns minutos e tente de novo.';
   return body?.message ?? `Erro inesperado (HTTP ${status}).`;
 }
 
