@@ -21,7 +21,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 
 - Build e testes: `./mvnw -q verify`. Os testes do dice-app precisam do Docker (DynamoDB Local via Testcontainers).
 - Só o núcleo: `./mvnw -q -pl dice-core test`
-- Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1`, depois `.venv/bin/python -m pytest tools/verify-py`.
+- Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1 cryptography==50.0.2`, depois `.venv/bin/python -m pytest tools/verify-py`. A cryptography só é usada pela chain-v2 (Ed25519).
 - CLI Python: `cd tools/verify-py && python3 -m dice_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
 - Verificar uma prova: `cd tools/verify-py && python3 -m dice_verify.proof prova.json`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
@@ -35,7 +35,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Infra (fora do reactor Maven): `./mvnw -f infra/pom.xml verify` (CDK assertions, precisa de Node) e, para sintetizar, `cd infra && npx --yes aws-cdk@2.1143.0 synth -c account=111111111111 -c hostedZoneId=Z000EXAMPLE`. Bootstrap e checklist em infra/README.md e infra/SECURITY.md.
 - Deploy: só pelo GitHub Actions (`.github/workflows/deploy-dev.yml`, OIDC). Nunca rode `cdk deploy` nem `aws` localmente.
 - Rodar o app localmente: o dice-app empacota para Lambda (`target/function.zip`), então `java -jar` não sobe servidor. Use `./mvnw -pl dice-app quarkus:dev` (mock event server do Lambda) com DynamoDB Local e s3mock, passando `-Ddice.dynamodb.endpoint-override=...` e `-Ddice.s3.endpoint-override=...`.
-- Smoke test de um ambiente: `tools/smoke/smoke-dev.sh <url>` (o deploy roda contra https://dices.nimbos.solutions).
+- Smoke test de um ambiente: `tools/smoke/smoke-dev.sh <url>` (o deploy roda contra https://dices.nimbos.solutions). Precisa da cryptography (`tools/smoke/requirements.txt`): o pedido sai assinado por `tools/smoke/sign_request.py`, e `tools/smoke/pair_device.py` pareia um segundo aparelho pela API e rola com ele.
 - CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main e confere se `spec/test-vectors.json` bate com o gerador. As actions são fixadas por SHA.
 - Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
 
@@ -52,6 +52,8 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - AWS: sa-east-1 (certificado do CloudFront em us-east-1), domínio dices.nimbos.solutions. Testes de concorrência chamam o RollService em paralelo (o servidor de teste do Lambda processa um evento por vez).
 - Imagem OG: Java2D com a fonte Inter do jar, gerada pela resolução vencedora e salva em S3 (og/{rollId}.png). No Linux sem fontconfig (Lambda), o renderer configura sun.awt.fontconfig sozinho.
 - Não existe server_seed.
+- Identidade (chain-v2, Fase 7, spec seção 7): todo REQUEST tem `player` {publicKey, name, requestId, signature, identityKey, links}. O aparelho (publicKey) assina em Ed25519 o JSON canônico de {context "dice-player-v1", sessionId, clientSeed, expression canônica, identityKey, name, requestId}. A identidade é a chave do primeiro aparelho; os outros entram por vínculos (até 8), cada um assinado pela chave anterior sobre {context "dice-device-v1", identityKey, deviceKey}. A identityKey tem de estar na mensagem do pedido (senão outro jogador vincula seu aparelho e toma seus pedidos). Apelido de 1 a 32 bytes (regras da seed). requestId repetido é replay (marcador REQ#{requestId} no DynamoDB). Mesas novas são chain-v2; mesas sem `chainFormat` são chain-v1, só leitura (409 TABLE_READ_ONLY), e o app cria outra. A chave nasce no navegador (web/identity.js, não exportável, IndexedDB) e nunca vai ao servidor. Impressão (só exibição): 4 primeiros bytes de SHA-256(identityKey), "3f9a-c2e1". Sem revogação de aparelho por enquanto.
+- Pareamento de aparelhos (spec 7.7): /pairings (dice-app/pairing) só repassa dados públicos, item PAIRING#{id} com TTL `expiresAt` (10 min). O segredo vai no fragmento `/#parear={id}.{hex}` e autentica os dois sentidos com HMAC-SHA256 (web/pairing.js). QR do web/vendor (qrcode-generator, rebuild em tools/vendor/qrcode/build.sh).
 - Verificação BLS: só no navegador (Fase 4). O backend checa randomness == SHA-256(signature) e o guarda de relógio: latest só é aceito a ±1 round do esperado por floor((agora - genesis)/3) + 1.
 
 ## Invariantes (nunca quebrar)
