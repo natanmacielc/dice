@@ -356,6 +356,15 @@ Como um aparelho novo ganha o vínculo. Não faz parte da verificação: a cadei
 
 Cada etapa só pode ser feita uma vez por pareamento.
 
+### 7.8 Lista de mesas do jogador (informativo)
+
+Para navegar entre mesas sem decorar IDs, o servidor guarda, por identidade, as mesas em que o jogador rolou ou entrou. A lista não participa da verificação e não sustenta confiança nenhuma: é só um índice. Como o ID da mesa é o que dá acesso a ela, todo pedido à lista vai assinado, senão quem visse sua chave no log de uma mesa poderia listar as outras.
+
+`POST /me/tables` com `{auth, action, sessionId?, cursor?}`:
+
+- `action`: `list` (página de 20, mais recentes primeiro, com `next` como cursor), `add` (entrar numa mesa sem rolar; a mesa tem de existir) ou `remove` (tirar da lista; rolar de novo a traz de volta). Rolar numa mesa também a põe na lista.
+- `auth`: `{publicKey, identityKey, links, at, signature}`. O aparelho (`publicKey`) assina os bytes UTF-8 do JSON canônico de `{"action", "at", "context": "dice-tables-v1", "cursor"?, "identityKey", "sessionId"?}` (campos ausentes ficam de fora). `at` é o instante do pedido no formato de `requestedAt` (seção 6.2), aceito a até 5 minutos do relógio do servidor. Os vínculos seguem a seção 7.2.
+
 ## 8. Fora das versões atuais por enquanto
 
 - Verificação BLS da assinatura: só no verificador do navegador (Fase 4).
