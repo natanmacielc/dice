@@ -1,11 +1,15 @@
 // Página inicial: escolhe o dado, rola, anima e confere no navegador.
 import { fetchLog, getJson, postJson, verifyRoll, verifyTable } from './api.js';
 import {
-  buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, relativeTime, requestRoll,
+  buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, historyLoadError, relativeTime,
+  requestRoll,
 } from './page-logic.js';
 import { parseExpression } from './verifier/dice-v1.js';
+import { fingerprint } from './verifier/chain-v2.js';
+import { adoptIdentity, identity, linkDevice, nameProblem, saveName, signRequest, storedName } from './identity.js';
+import { acceptIdentity, answerDevice, deviceMac, newSecret, pairingUrl, parsePairingFragment } from './pairing.js';
 import {
-  $, DIE_COLORS, DIE_SIDES, Tray, celebrate, closeDialog, copyText, countUp, dieIcon, h, replay, ring,
+  $, DIE_COLORS, DIE_SIDES, Tray, celebrate, closeDialog, copyText, countUp, dieIcon, h, openDialog, qrSvg, replay, ring,
   runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep, toast,
 } from './ui.js';
 
@@ -15,6 +19,10 @@ const ID_FORMAT = /^[0-9a-hjkmnp-tv-z]{16}$/;
 const POLL_MS = 1000;
 const GIVE_UP_MS = 90_000;
 const MISSING_TABLE = 'A mesa salva neste navegador não existe mais. Uma nova é criada na próxima rolagem.';
+const RECREATED = {
+  missing: 'A mesa salva neste navegador não existia mais. Criei uma nova.',
+  'read-only': 'A mesa salva era antiga, sem identificação de quem rola. Criei uma nova; convide a turma de novo.',
+};
 
 const state = { sides: 20, count: 1, modifier: 0, rolling: false, seedCustom: false, rollId: null };
 const tray = new Tray($('tray'), state.sides, state.count);
@@ -131,6 +139,158 @@ async function adoptInvite() {
     toast('A mesa do convite não existe mais.');
   }
 }
+
+// ---------- Jogador ----------
+
+let playerName = storedName();
+let pendingRoll = false;
+
+async function renderPlayer() {
+  $('player-label').textContent = playerName ?? 'sem apelido';
+  try {
+    const me = await identity();
+    $('player-label').textContent = playerName ? `${playerName} · ${me.fingerprint}` : `sem apelido · ${me.fingerprint}`;
+    $('player-fingerprint').textContent = me.fingerprint;
+    $('player-ephemeral').hidden = me.persistent;
+  } catch (e) {
+    $('player-fingerprint').textContent = '—';
+    $('player-error').textContent = e.message;
+  }
+}
+
+$('player-dialog').addEventListener('opened', () => {
+  $('player-error').textContent = '';
+  $('player-form').elements.name.value = playerName ?? '';
+  renderPlayer();
+});
+
+$('player-dialog').addEventListener('close', () => {
+  pendingRoll = false;
+});
+
+$('player-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const name = event.target.elements.name.value.trim();
+  if (nameProblem(name)) {
+    $('player-error').textContent = 'O apelido deve ter de 1 a 32 bytes, sem quebra de linha.';
+    return;
+  }
+  playerName = name;
+  saveName(name);
+  renderPlayer();
+  const rollAfter = pendingRoll;
+  closeDialog($('player-dialog'));
+  toast(`Você rola como ${name}`);
+  if (rollAfter) roll();
+});
+
+// ---------- Outros aparelhos (seção 7.7 da spec) ----------
+
+const PAIR_POLL_MS = 1500;
+const runs = { pair: 0, join: 0 };
+
+/** Consulta o pareamento até ready(p); para quando a folha fecha (outra rodada) ou o link expira. */
+async function waitPairing(kind, run, pairingId, expiresAt, ready) {
+  for (;;) {
+    if (runs[kind] !== run) throw Object.assign(new Error('cancelado'), { cancelled: true });
+    if (Date.now() > Date.parse(expiresAt)) throw new Error('O link expirou. Gere outro no aparelho que já rola.');
+    const pairing = await getJson(`/pairings/${encodeURIComponent(pairingId)}`);
+    if (ready(pairing)) return pairing;
+    await sleep(PAIR_POLL_MS);
+  }
+}
+
+$('pair-dialog').addEventListener('opened', async () => {
+  const run = ++runs.pair;
+  const say = (text) => {
+    if (runs.pair === run) $('pair-status').textContent = text;
+  };
+  $('pair-qr').replaceChildren();
+  $('pair-link').textContent = '';
+  $('pair-copy').disabled = true;
+  try {
+    if (!playerName) throw new Error('Escolha seu apelido antes: o outro aparelho usa o mesmo.');
+    say('Gerando o link…');
+    await identity();
+    const secret = newSecret();
+    const [{ pairingId, expiresAt }, { qrcode }] = await Promise.all([
+      postJson('/pairings', {}), import('./vendor/qrcode-generator-2.0.4.mjs')]);
+    const url = pairingUrl(location.origin, pairingId, secret);
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    $('pair-qr').replaceChildren(qrSvg(qr, 'QR com o link para vincular outro aparelho'));
+    $('pair-link').textContent = url;
+    $('pair-copy').disabled = false;
+    $('pair-copy').onclick = () => copyText(url, 'Link copiado');
+    say('Esperando o outro aparelho abrir o link…');
+    const withDevice = await waitPairing('pair', run, pairingId, expiresAt, (p) => p.device);
+    const body = await answerDevice({ pairing: withDevice, secret, name: playerName, linkDevice });
+    await postJson(`/pairings/${encodeURIComponent(pairingId)}/identity`, body);
+    say(`Pronto. Confirme no outro aparelho e ele rola como ${playerName}.`);
+  } catch (e) {
+    if (!e.cancelled) say(e.message);
+  }
+});
+$('pair-dialog').addEventListener('close', () => {
+  runs.pair += 1;
+});
+
+/** Abriu /#parear=…: este aparelho entra na identidade de quem gerou o link. */
+async function joinFromLink() {
+  if (!location.hash.startsWith('#parear=')) return;
+  const parsed = parsePairingFragment(location.hash);
+  // O segredo sai da barra de endereço logo de cara.
+  history.replaceState(null, '', `${location.pathname}${location.search}`);
+  const run = ++runs.join;
+  const say = (text) => {
+    if (runs.join === run) $('join-status').textContent = text;
+  };
+  $('join-who').hidden = true;
+  $('join-warning').hidden = true;
+  $('join-confirm').hidden = true;
+  $('join-error').textContent = '';
+  openDialog($('join-dialog'));
+  try {
+    if (!parsed) throw new Error('Link de vínculo inválido. Gere outro no aparelho que já rola.');
+    const { pairingId, secret } = parsed;
+    say('Conectando com o outro aparelho…');
+    const me = await identity();
+    const pairing = await getJson(`/pairings/${encodeURIComponent(pairingId)}`);
+    await postJson(`/pairings/${encodeURIComponent(pairingId)}/device`,
+      { deviceKey: me.publicKey, mac: await deviceMac(secret, pairingId, me.publicKey) });
+    say('Esperando o outro aparelho autorizar…');
+    const done = await waitPairing('join', run, pairingId, pairing.expiresAt, (p) => p.identity);
+    const pkg = await acceptIdentity({ pairing: done, secret, deviceKey: me.publicKey });
+    const fp = await fingerprint(pkg.identityKey);
+    say('O outro aparelho autorizou. Confira e confirme:');
+    $('join-who').textContent = `${pkg.name} · ${fp}`;
+    $('join-who').hidden = false;
+    if (pkg.identityKey !== me.identityKey && (playerName || me.links.length)) {
+      $('join-warning').textContent = `Este aparelho deixa de rolar como ${playerName ?? 'antes'} · ${me.fingerprint}.`;
+      $('join-warning').hidden = false;
+    }
+    $('join-confirm').hidden = false;
+    $('join-confirm').onclick = async () => {
+      try {
+        await adoptIdentity(pkg);
+        playerName = pkg.name;
+        saveName(pkg.name);
+        await renderPlayer();
+        closeDialog($('join-dialog'));
+        toast(`Este aparelho rola como ${pkg.name} · ${fp}`);
+      } catch (e) {
+        $('join-error').textContent = e.message;
+      }
+    };
+  } catch (e) {
+    if (!e.cancelled) $('join-error').textContent = e.message;
+  }
+}
+$('join-dialog').addEventListener('close', () => {
+  runs.join += 1;
+});
+addEventListener('hashchange', joinFromLink);
 
 // ---------- Escolha do dado ----------
 
@@ -317,7 +477,14 @@ async function roll() {
     $('roll-error').textContent = e.message;
     return;
   }
+  if (!playerName) {
+    // Primeira rolagem: escolhe o apelido e a rolagem segue em seguida.
+    openDialog($('player-dialog'));
+    pendingRoll = true;
+    return;
+  }
   const clientSeed = $('seed').value;
+  const name = playerName;
   resetStage();
   setBusy(true);
   $('verify-badge').hidden = true;
@@ -326,12 +493,16 @@ async function roll() {
   stageRing.mode('waiting');
   tray.tumble();
   try {
-    const { receipt, recreated } = await requestRoll({
+    const { receipt, recreated, reason } = await requestRoll({
       sessionId,
       createTable: () => createTable(null),
-      postRoll: (table) => postJson(`/sessions/${encodeURIComponent(table)}/rolls`, { clientSeed, expression: expr }),
+      postRoll: async (table) => {
+        // Assina para a mesa desta tentativa: a mesa entra na mensagem assinada.
+        const player = await signRequest({ sessionId: table, clientSeed, expression: expr, name });
+        return postJson(`/sessions/${encodeURIComponent(table)}/rolls`, { clientSeed, expression: expr, player });
+      },
     });
-    if (recreated) toast('A mesa salva neste navegador não existia mais. Criei uma nova.');
+    if (recreated) toast(RECREATED[reason]);
     bumpHistory();
     const result = await waitForResult(receipt);
     await reveal(result);
@@ -365,6 +536,7 @@ $('share-btn').addEventListener('click', () => {
 // ---------- Histórico ----------
 
 let historyItems = [];
+let historyError = null;
 
 function bumpHistory() {
   renderHistoryCount(historyItems.length + 1);
@@ -378,30 +550,46 @@ function renderHistoryCount(n) {
 async function refreshHistory() {
   if (!sessionId) {
     historyItems = [];
+    historyError = null;
     renderHistoryCount(0);
     renderHistory();
     return;
   }
   const id = sessionId;
   try {
-    historyItems = historyFromLog(await fetchLog(id));
+    historyItems = await withFingerprints(historyFromLog(await fetchLog(id)));
+    historyError = null;
   } catch (e) {
-    historyItems = [];
     if (e.status === 404 && id === sessionId) {
       // A mesa salva sumiu (ex.: DynamoDB Local zerado): esquece e a próxima rolagem cria outra.
       setTable(null);
       toast(MISSING_TABLE);
       return;
     }
+    // Mantém o que já estava na tela: lista vazia passaria a ideia de que as rolagens sumiram.
+    historyError = historyLoadError(e);
   }
   renderHistoryCount(historyItems.length);
   if ($('history-dialog').open) renderHistory();
 }
 
+/** Acrescenta a impressão da chave de cada jogador (SHA-256 é assíncrono na Web Crypto). */
+async function withFingerprints(items) {
+  // Entrada fora do formato (a verificação da mesa acusa) não pode esvaziar o histórico.
+  const keys = [...new Set(items.map((r) => r.player?.identityKey).filter((k) => /^[0-9a-f]{64}$/.test(k ?? '')))];
+  const prints = new Map(await Promise.all(keys.map(async (k) => [k, await fingerprint(k)])));
+  for (const r of items) {
+    if (r.player) r.player.fingerprint = prints.get(r.player.identityKey) ?? '?';
+  }
+  return items;
+}
+
 const STATUS_TEXT = { PENDING: 'aguardando o drand', EXPIRED: 'atrasado' };
 
 function renderHistory() {
-  $('history-empty').hidden = historyItems.length > 0;
+  $('history-failed').hidden = !historyError;
+  $('history-failed-text').textContent = historyError ?? '';
+  $('history-empty').hidden = historyItems.length > 0 || !!historyError;
   $('history-list').replaceChildren(...historyItems.map((r, i) => {
     let sides = 20;
     try {
@@ -415,7 +603,8 @@ function renderHistory() {
         h('span', { class: 'h-die' }, dieIcon(sides)),
         h('span', { class: 'h-main' },
           h('strong', { text: r.expression }),
-          h('span', { text: r.dice ? r.dice.join(' · ') : STATUS_TEXT[r.status] })),
+          h('span', { text: r.dice ? r.dice.join(' · ') : STATUS_TEXT[r.status] }),
+          r.player ? h('span', { class: 'h-player' }, r.player.name, ' ', h('code', { text: r.player.fingerprint ?? '' })) : null),
         h('span', { class: 'h-side' },
           h('span', { class: 'h-total', text: r.total ?? '…' }),
           h('span', { class: 'h-time', text: relativeTime(r.requestedAt) }))));
@@ -424,6 +613,11 @@ function renderHistory() {
     return item;
   }));
 }
+
+$('history-retry').addEventListener('click', () => {
+  $('history-failed-text').textContent = 'Carregando…';
+  refreshHistory().then(renderHistory);
+});
 
 $('history-dialog').addEventListener('opened', () => {
   renderHistory();
@@ -441,6 +635,8 @@ $('verify-table').addEventListener('click', async () => {
 // ---------- Início ----------
 
 setupDialogs();
+renderPlayer();
+joinFromLink();
 newSeed();
 adoptInvite();
 renderTable();

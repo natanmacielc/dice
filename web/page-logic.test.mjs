@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   buildExpression, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
+  historyLoadError,
   parseRollInput, relativeTime, requestRoll, runChecks, secondsUntil, shellQuote, summarizeLog,
 } from './page-logic.js';
 import { timeOf, verifyProof } from './verifier/chain-v1.js';
+import { fingerprint, verifyProof as verifyProofV2 } from './verifier/chain-v2.js';
 import { roll } from './verifier/dice-v1.js';
 
 const vectors = JSON.parse(readFileSync(new URL('../spec/test-vectors.json', import.meta.url), 'utf8'));
@@ -29,12 +31,21 @@ test('formatação', () => {
   assert.equal(secondsUntil('2026-01-01T00:00:05.000Z', Date.parse('2026-01-01T00:00:09Z')), 0);
 });
 
+test('histórico que não carrega vira mensagem, não lista vazia (regressão do log acima de 8 KB)', () => {
+  assert.equal(historyLoadError(Object.assign(new Error('x'), { name: 'TimeoutError' })), 'O servidor demorou demais para mandar o histórico.');
+  assert.equal(historyLoadError(Object.assign(new Error('Mesa ocupada. Tente de novo.'), { status: 503 })),
+    'Não consegui carregar o histórico: Mesa ocupada. Tente de novo.');
+  assert.match(historyLoadError(new TypeError('Failed to fetch')), /Confira a conexão/);
+});
+
 test('seed gerada tem 16 caracteres base32 Crockford', () => {
   assert.match(generateSeed(), /^[0-9a-hjkmnp-tv-z]{16}$/);
   assert.equal(generateSeed((n) => new Uint8Array(n)), '0'.repeat(16));
 });
 
 const fetchOk = async () => ({ beacon: { ...validProof.beacon }, endpoint: 'https://api.drand.sh' });
+const validProofV2 = vectors.proofVectorsV2.find((v) => v.id === 'proof-v2-valid-linked-phone').proof;
+const fetchOkV2 = async () => ({ beacon: { ...validProofV2.beacon }, endpoint: 'https://api.drand.sh' });
 
 test('checklist todo verde para uma prova válida', async () => {
   const checks = await runChecks({ proof: validProof, verifyProof, fetchRound: fetchOk, verifyBls: async () => true, timeOf });
@@ -55,6 +66,32 @@ test('checklist acusa drand divergente, drand fora, BLS inválido e prova adulte
   checks = await runChecks({ proof: tampered, verifyProof, fetchRound: fetchOk, verifyBls: async () => true, timeOf });
   assert.equal(checks[0].ok, false);
   assert.match(checks[0].detail, /^PROOF_SUMMARY_MISMATCH/);
+});
+
+test('chain-v2: checklist mostra quem assinou e acusa assinatura inválida', async () => {
+  const deps = { verifyProof: verifyProofV2, fetchRound: fetchOkV2, verifyBls: async () => true, timeOf, fingerprint };
+  let checks = await runChecks({ proof: validProofV2, ...deps });
+  assert.deepEqual(checks.map((c) => [c.id, c.ok]), [['proof', true], ['player', true], ['drand', true], ['bls', true], ['future', true]]);
+  assert.equal(checks[1].label, 'Pedido assinado por Ana');
+  assert.match(checks[1].detail, new RegExp(await fingerprint(validProofV2.roll.player.identityKey)));
+  assert.match(checks[1].detail, /aparelho vinculado/);
+
+  const forged = vectors.proofVectorsV2.find((v) => v.id === 'proof-v2-signature-flipped').proof;
+  checks = await runChecks({ proof: forged, ...deps });
+  assert.deepEqual(checks.slice(0, 2).map((c) => c.ok), [false, false]);
+  assert.match(checks[0].detail, /^CHAIN_PLAYER_SIGNATURE/);
+});
+
+test('histórico traz o jogador de cada pedido da chain-v2', () => {
+  const entries = vectors.logVectorsV2.find((v) => v.id === 'log-v2-valid-full').entries;
+  const history = historyFromLog(entries, Date.parse('2030-01-01T00:00:00Z'));
+  assert.deepEqual(history.map((h) => h.player.name), ['Ana', 'Ana', 'Thorin 🪓', 'Ana']);
+  // Computador, celular e tablet da Ana: aparelhos diferentes, a mesma identidade.
+  const ana = history.filter((h) => h.player.name === 'Ana');
+  assert.equal(new Set(ana.map((h) => h.player.identityKey)).size, 1);
+  assert.equal(new Set(ana.map((h) => h.player.publicKey)).size, 3);
+  const v1 = historyFromLog(vectors.logVectors.find((v) => v.id === 'log-valid-full').entries);
+  assert.ok(v1.every((h) => h.player === null));
 });
 
 test('resumo do log separa pendentes', () => {
@@ -135,8 +172,20 @@ test('mesa salva que não existe mais: cria outra e repete o roll (regressão do
     return { rollId: 'r1' };
   };
   assert.deepEqual(await requestRoll({ sessionId: 'mesa-velha', createTable, postRoll }),
-    { receipt: { rollId: 'r1' }, sessionId: 'mesa-nova', recreated: true });
+    { receipt: { rollId: 'r1' }, sessionId: 'mesa-nova', recreated: true, reason: 'missing' });
   assert.deepEqual(calls, ['roll:mesa-velha', 'create', 'roll:mesa-nova']);
+
+  // Mesa chain-v1: só leitura, a próxima rolagem vai para uma mesa nova.
+  calls.length = 0;
+  const readOnly = Object.assign(new Error('antiga'), { status: 409, code: 'TABLE_READ_ONLY' });
+  const postRollV1 = async (id) => {
+    calls.push(`roll:${id}`);
+    if (id === 'mesa-v1') throw readOnly;
+    return { rollId: 'r2' };
+  };
+  assert.deepEqual(await requestRoll({ sessionId: 'mesa-v1', createTable, postRoll: postRollV1 }),
+    { receipt: { rollId: 'r2' }, sessionId: 'mesa-nova', recreated: true, reason: 'read-only' });
+  assert.deepEqual(calls, ['roll:mesa-v1', 'create', 'roll:mesa-nova']);
 
   calls.length = 0;
   assert.deepEqual(await requestRoll({ sessionId: null, createTable, postRoll }),

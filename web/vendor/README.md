@@ -23,3 +23,10 @@ Pacotes incluídos no bundle (versões travadas no lockfile):
 | isomorphic-fetch / whatwg-fetch | 3.0.0 / 3.6.20 | MIT |
 
 Os avisos de licença ficam no fim do próprio arquivo (`--legal-comments=eof`).
+
+## qrcode-generator-2.0.4.mjs
+
+- Origem: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4 (MIT, Kazuhiko Arase), só o gerador da matriz. O desenho em SVG é `qrSvg` em `web/ui.js`, sem estilo inline.
+- Usado pela folha "Usar em outro aparelho" (`web/app.js`), carregado só quando ela abre.
+- SHA-256: `72b924e598fc3efc0d4da0cd79acad3c89d01b2e378fb9839154225bab78e2a9`
+- Reproduzir: `tools/vendor/qrcode/build.sh` (`npm ci --ignore-scripts` a partir do `package-lock.json` e esbuild 0.28.2). O hash tem de sair igual.

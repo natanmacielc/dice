@@ -111,6 +111,23 @@ export function dieIcon(sides, label = null) {
   return icon;
 }
 
+/**
+ * QR em SVG: um path só, com margem de 4 módulos e sem estilo inline (o CSP proíbe).
+ * qr é o objeto do qrcode-generator (web/vendor) já com make().
+ */
+export function qrSvg(qr, label) {
+  const n = qr.getModuleCount();
+  let d = '';
+  for (let row = 0; row < n; row++) {
+    for (let col = 0; col < n; col++) {
+      if (qr.isDark(row, col)) d += `M${col + 4} ${row + 4}h1v1h-1z`;
+    }
+  }
+  const icon = svg('svg', { viewBox: `0 0 ${n + 8} ${n + 8}`, class: 'qr', role: 'img', 'aria-label': label, 'shape-rendering': 'crispEdges' });
+  icon.append(svg('rect', { class: 'qr-bg', width: n + 8, height: n + 8 }), svg('path', { class: 'qr-dots', d }));
+  return icon;
+}
+
 /** Um dado animável. */
 export class Die {
   constructor(sides) {

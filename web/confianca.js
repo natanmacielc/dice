@@ -2,6 +2,7 @@
 import { fetchLog, verifyRoll } from './api.js';
 import { drandRoundUrl, explainRoll, formatBreakdown, historyFromLog, parseRollInput, shellQuote } from './page-logic.js';
 import { roll as computeRoll } from './verifier/dice-v1.js';
+import { playerMessage } from './verifier/chain-v2.js';
 import { $, DIE_COLORS, copyButton, dieIcon, h, renderChecks } from './ui.js';
 
 const SESSION_KEY = 'dice.sessionId';
@@ -113,6 +114,7 @@ function renderSummary(proof) {
     h('div', { class: 'summary-text' },
       h('strong', { class: 'summary-total', text: String(r.total) }),
       h('span', { text: `${r.expression} · ${formatBreakdown(r.dice, r.modifier) || `dado ${r.dice[0]}`}` }),
+      r.player ? h('span', { text: `rolado por ${r.player.name}` }) : null,
       h('a', { class: 'text-link', href: `/r/${r.rollId}`, text: 'Abrir a rolagem' })));
 }
 
@@ -122,8 +124,31 @@ function renderPython(proof) {
     command(`git clone ${REPO}.git\ncd dices/tools/verify-py`),
     h('p', { class: 'field-help', text: 'Refaz o dado a partir dos ingredientes:' }),
     command(`python3 -m dice_verify --randomness ${proof.beacon.randomness} --seed ${shellQuote(r.clientSeed)} --nonce ${r.nonce} --expr ${r.expression} --signature ${proof.beacon.signature}`),
-    h('p', { class: 'field-help', text: 'Ou confere a prova inteira (cadeia, round e resultado):' }),
-    command(`curl -s ${location.origin}/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`));
+    h('p', { class: 'field-help', text: 'Ou confere a prova inteira (cadeia, assinatura de quem rolou, round e resultado):' }),
+    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`),
+    ...playerBlock(proof));
+}
+
+/** chain-v2: a mensagem que o jogador assinou, a chave e a assinatura (Ed25519). */
+function playerBlock(proof) {
+  const r = proof.roll;
+  if (proof.chainFormat !== 'chain-v2' || !r.player) return [];
+  const p = r.player;
+  const message = new TextDecoder().decode(playerMessage({
+    sessionId: r.sessionId, clientSeed: r.clientSeed, expression: r.expression, identityKey: p.identityKey, name: p.name, requestId: p.requestId,
+  }));
+  const out = [
+    h('p', { class: 'field-help', text: `O aparelho de ${p.name} assinou exatamente esta mensagem (Ed25519). Trocar qualquer letra invalida a assinatura:` }),
+    codeLine(message, 'mensagem'),
+    codeLine(p.publicKey, 'aparelho'),
+    codeLine(p.signature, 'assinatura'),
+    codeLine(p.identityKey, 'identidade'),
+  ];
+  if (p.links.length) {
+    out.push(h('p', { class: 'field-help', text: `O aparelho está ligado à identidade por ${p.links.length} vínculo(s): cada um é assinado pela chave anterior (a identidade, depois cada aparelho) e diz "este aparelho também é meu".` }));
+    p.links.forEach((l, i) => out.push(codeLine(l.deviceKey, `vínculo ${i + 1}`)));
+  }
+  return out;
 }
 
 async function check(rollId) {

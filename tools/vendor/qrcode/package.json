@@ -1,0 +1,12 @@
+{
+  "name": "dice-vendor-qrcode",
+  "private": true,
+  "description": "Gera web/vendor/qrcode-generator-2.0.4.mjs. Ver build.sh.",
+  "type": "module",
+  "dependencies": {
+    "qrcode-generator": "2.0.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

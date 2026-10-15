@@ -15,7 +15,20 @@ const ERROR_MESSAGES = {
   BEACON_UNAVAILABLE: 'O drand não respondeu agora. Tente de novo em alguns segundos.',
   LEDGER_BUSY: 'Mesa ocupada. Tente de novo.',
   INVALID_REQUEST: 'Pedido inválido.',
+  PLAYER_INVALID: 'Apelido ou chave do jogador em formato inválido.',
+  PLAYER_SIGNATURE_INVALID: 'A assinatura do pedido não confere.',
+  TABLE_READ_ONLY: 'Esta mesa é antiga, sem identificação de quem rola, e não aceita rolagens novas.',
+  REQUEST_REPLAY: 'Este pedido já foi registrado.',
 };
+
+/** Texto para quando o histórico da mesa não carrega (rede, servidor ou tempo esgotado). */
+export function historyLoadError(error) {
+  if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+    return 'O servidor demorou demais para mandar o histórico.';
+  }
+  if (error?.status) return `Não consegui carregar o histórico: ${error.message}`;
+  return 'Não consegui carregar o histórico. Confira a conexão.';
+}
 
 export function describeError(body, status) {
   if (body && ERROR_MESSAGES[body.error]) return ERROR_MESSAGES[body.error];
@@ -54,7 +67,7 @@ export function generateSeed(random = (n) => globalThis.crypto.getRandomValues(n
  * Checklist da página /r/{id}. Cada item: { id, label, ok, detail }.
  * As dependências entram por parâmetro para testar sem rede.
  */
-export async function runChecks({ proof, verifyProof, fetchRound, verifyBls, timeOf }) {
+export async function runChecks({ proof, verifyProof, fetchRound, verifyBls, timeOf, fingerprint }) {
   const target = proof.roll.targetRound;
   const checks = [];
 
@@ -67,6 +80,20 @@ export async function runChecks({ proof, verifyProof, fetchRound, verifyBls, tim
       ? `dados ${formatDice(proof.roll.dice)} · total ${proof.roll.total}`
       : `${p.code}: ${p.message}`,
   });
+
+  // Só a chain-v2 atesta quem rolou; a assinatura é conferida dentro de verifyProof.
+  if (proof.chainFormat === 'chain-v2') {
+    const player = proof.roll?.player;
+    const fp = typeof player?.identityKey === 'string' && /^[0-9a-f]{64}$/.test(player.identityKey)
+      ? await fingerprint(player.identityKey) : '?';
+    const via = Array.isArray(player?.links) && player.links.length ? ', por um aparelho vinculado' : '';
+    checks.push({
+      id: 'player',
+      label: `Pedido assinado por ${player?.name ?? '?'}`,
+      ok: p.valid,
+      detail: p.valid ? `identidade ${fp}${via}: ninguém mais poderia ter feito este pedido` : 'a assinatura ou a prova não confere',
+    });
+  }
 
   try {
     const { beacon, endpoint } = await fetchRound(target);
@@ -132,8 +159,9 @@ export function parseRollInput(text) {
 }
 
 /**
- * Pede o roll na mesa salva. Se ela não existe mais (404, ex.: DynamoDB Local zerado),
- * cria outra e tenta de novo uma vez. Devolve { receipt, sessionId, recreated }.
+ * Pede o roll na mesa salva. Se ela não existe mais (404, ex.: DynamoDB Local zerado) ou é
+ * antiga e só leitura (409 TABLE_READ_ONLY), cria outra e tenta de novo uma vez.
+ * Devolve { receipt, sessionId, recreated } e, quando recria, reason ('missing' ou 'read-only').
  */
 export async function requestRoll({ sessionId, createTable, postRoll }) {
   if (!sessionId) {
@@ -143,9 +171,10 @@ export async function requestRoll({ sessionId, createTable, postRoll }) {
   try {
     return { receipt: await postRoll(sessionId), sessionId, recreated: false };
   } catch (e) {
-    if (e.status !== 404) throw e;
+    if (e.status !== 404 && e.code !== 'TABLE_READ_ONLY') throw e;
     const created = await createTable();
-    return { receipt: await postRoll(created), sessionId: created, recreated: true };
+    const reason = e.code === 'TABLE_READ_ONLY' ? 'read-only' : 'missing';
+    return { receipt: await postRoll(created), sessionId: created, recreated: true, reason };
   }
 }
 
@@ -164,6 +193,7 @@ export function historyFromLog(entries, nowMs = Date.now()) {
       rolls.set(p.rollId, {
         rollId: p.rollId, expression: p.expression, nonce: p.nonce, clientSeed: p.clientSeed,
         targetRound: p.targetRound, requestedAt: p.requestedAt, status: 'PENDING', dice: null, total: null,
+        player: p.player ? { name: p.player.name, identityKey: p.player.identityKey, publicKey: p.player.publicKey } : null,
       });
     } else if (e.type === 'RESULT' && rolls.has(p.rollId)) {
       Object.assign(rolls.get(p.rollId), { status: 'RESOLVED', dice: p.dice, total: p.total });

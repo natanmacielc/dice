@@ -122,6 +122,12 @@
   </div>
   <p class="sheet-lead">Todas as rolagens de uma mesa ficam num registro público encadeado. Chame os amigos para a mesma mesa e todo mundo vê tudo.</p>
 
+  <div class="kv" id="player-row">
+    <span class="kv-label">Você</span><span id="player-label">sem apelido</span>
+    <button type="button" class="copy" data-open="player-dialog">Mudar</button>
+    <button type="button" class="copy" data-open="pair-dialog">Usar em outro aparelho</button>
+  </div>
+
   <div id="table-current" hidden>
     <p class="table-name" id="table-name"></p>
     <div class="kv">
@@ -129,7 +135,7 @@
       <button type="button" class="copy" id="table-id-copy">Copiar</button>
     </div>
     <button type="button" class="primary-btn" id="table-invite">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a4 4 0 1 0-8 0M4 20a8 8 0 0 1 16 0M19 8v6M16 11h6"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M19 8v6M16 11h6"/></svg>
       Convidar para esta mesa
     </button>
   </div>
@@ -156,12 +162,66 @@
   <p class="error" id="table-error" role="alert"></p>
 </dialog>
 
+<dialog class="sheet" id="player-dialog" aria-labelledby="player-title">
+  <div class="sheet-head">
+    <h2 id="player-title">Quem está rolando?</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="sheet-lead">Cada rolagem sai assinada por uma chave criada neste navegador. O apelido aparece para a mesa; a impressão da chave mostra que foi você, mesmo que outra pessoa use o mesmo apelido.</p>
+  <form id="player-form" class="stack">
+    <label class="field">
+      <span class="field-label">Apelido</span>
+      <span class="field-row">
+        <input name="name" maxlength="32" autocomplete="nickname" placeholder="ex.: Thorin" required>
+        <button type="submit" class="ghost-btn">Salvar</button>
+      </span>
+      <span class="field-help">Até 32 bytes. Fica gravado em cada rolagem; se mudar depois, só vale para as próximas.</span>
+    </label>
+  </form>
+  <div class="kv">
+    <span class="kv-label">Sua chave</span><code id="player-fingerprint">…</code>
+  </div>
+  <p class="field-help" id="player-ephemeral" hidden>Este navegador não guarda a chave: ao fechar a aba, você ganha outra. Para manter a mesma identidade, saia do modo privado.</p>
+  <p class="error" id="player-error" role="alert"></p>
+</dialog>
+
+<dialog class="sheet" id="pair-dialog" aria-labelledby="pair-title">
+  <div class="sheet-head">
+    <h2 id="pair-title">Usar em outro aparelho</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="sheet-lead">No celular, tablet ou outro navegador, aponte a câmera para o QR ou abra o link. Esse aparelho passa a rolar como você, com a mesma impressão. O link vale 10 minutos e serve para um aparelho só.</p>
+  <div class="qr-box" id="pair-qr"></div>
+  <div class="kv">
+    <code id="pair-link"></code>
+    <button type="button" class="copy" id="pair-copy" disabled>Copiar link</button>
+  </div>
+  <p class="status-line" id="pair-status" aria-live="polite"></p>
+  <p class="field-help">Um aparelho vinculado rola em seu nome enquanto existir. Vincule só aparelhos seus.</p>
+</dialog>
+
+<dialog class="sheet" id="join-dialog" aria-labelledby="join-title">
+  <div class="sheet-head">
+    <h2 id="join-title">Vincular este aparelho</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="status-line" id="join-status" aria-live="polite"></p>
+  <p class="table-name" id="join-who" hidden></p>
+  <p class="field-help" id="join-warning" hidden></p>
+  <button type="button" class="primary-btn" id="join-confirm" hidden>Rolar com esta identidade</button>
+  <p class="error" id="join-error" role="alert"></p>
+</dialog>
+
 <dialog class="drawer" id="history-dialog" aria-labelledby="history-title">
   <div class="sheet-head">
     <h2 id="history-title">Histórico</h2>
     <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <p class="muted" id="history-empty">Nenhuma rolagem nesta mesa ainda.</p>
+  <div class="history-failed" id="history-failed" role="alert" hidden>
+    <p id="history-failed-text"></p>
+    <button type="button" class="ghost-btn" id="history-retry">Tentar de novo</button>
+  </div>
   <ol class="history" id="history-list"></ol>
   <div class="drawer-foot">
     <div class="chain" id="chain" hidden></div>

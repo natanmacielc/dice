@@ -250,6 +250,17 @@ dialog.is-closing { animation: fade-out .22s ease-in forwards !important; }
 .h-die .die-icon { width: 2.4rem; height: 2.4rem; }
 .h-main { display: grid; min-width: 0; }
 .h-main span { color: var(--muted); font-size: .8rem; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-main .h-player { font-family: inherit; color: var(--ink); }
+.h-player code { color: var(--muted); font-size: .75rem; margin-left: .2rem; }
+#player-row { padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; }
+#player-label { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+#player-row .copy:first-of-type { margin-left: auto; }
+.qr-box { display: grid; place-items: center; margin: .8rem 0; min-height: 12rem; }
+.qr { width: min(15rem, 70vw); height: auto; border-radius: 12px; }
+.qr-bg { fill: #fff; }
+.qr-dots { fill: #0a0616; }
+#pair-link { min-width: 0; flex: 1; font-size: .75rem; }
+#join-confirm { width: 100%; margin-top: .6rem; }
 .h-side { display: grid; justify-items: end; }
 .h-total { font-family: var(--display); font-weight: 800; font-size: 1.5rem; line-height: 1; color: var(--c); }
 .h-time { color: var(--faint); font-size: .75rem; }
@@ -263,6 +274,8 @@ dialog.is-closing { animation: fade-out .22s ease-in forwards !important; }
 .chain[data-state='fail'] .chain-link { --link: var(--fail); }
 .chain[data-state='running'] .chain-link { --link: var(--c); }
 .chain-result { font-size: .85rem; color: var(--muted); margin: 0; }
+.history-failed { display: grid; gap: .6rem; justify-items: start; color: var(--fail); font-size: .9rem; }
+.history-failed p { margin: 0; }
 .chain-result.is-ok { color: var(--ok); }
 .chain-result.is-fail { color: var(--fail); }
 
@@ -275,6 +288,9 @@ dialog.is-closing { animation: fade-out .22s ease-in forwards !important; }
 .status-pill[data-status='PENDING'] { color: var(--cyan); animation: flicker 1.4s infinite; }
 .status-pill[data-status='EXPIRED'] { color: var(--fail); border-color: color-mix(in oklab, var(--fail) 45%, transparent); }
 .roll-expression { font-family: var(--display); font-weight: 700; font-size: 1.3rem; margin: .4rem 0 0; color: var(--c); }
+.roll-player { margin: .25rem 0 0; color: var(--muted); font-size: .95rem; }
+.roll-player strong { color: var(--c); font-weight: 600; }
+.fingerprint { font-family: var(--mono); font-size: .8em; color: var(--muted); letter-spacing: .02em; }
 .page-roll .readout { min-height: 0; }
 .cta-row { display: flex; justify-content: center; width: 100%; margin: 1.2rem 0 .8rem; }
 .roll-btn-link { text-decoration: none; }
