@@ -1,0 +1,13 @@
+{
+  "app": "../mvnw -q -B -f pom.xml compile exec:java",
+  "context": {
+    "zoneName": "nimbos.solutions",
+    "domainName": "dices.nimbos.solutions",
+    "githubRepo": "natanmacielc/dices",
+    "githubEnvironment": "dev",
+    "functionZip": "../dice-app/target/function.zip",
+    "webDir": "../web",
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/core:defaultCrossStackReferences": "strong"
+  }
+}
