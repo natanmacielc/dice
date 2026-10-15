@@ -15,18 +15,13 @@ import software.amazon.awscdk.services.cloudfront.BehaviorOptions;
 import software.amazon.awscdk.services.cloudfront.IOrigin;
 import software.amazon.awscdk.services.cloudfront.CachePolicy;
 import software.amazon.awscdk.services.cloudfront.Distribution;
-import software.amazon.awscdk.services.cloudfront.HeadersFrameOption;
-import software.amazon.awscdk.services.cloudfront.HeadersReferrerPolicy;
+import software.amazon.awscdk.services.cloudfront.FunctionAssociation;
+import software.amazon.awscdk.services.cloudfront.FunctionCode;
+import software.amazon.awscdk.services.cloudfront.FunctionEventType;
+import software.amazon.awscdk.services.cloudfront.FunctionRuntime;
 import software.amazon.awscdk.services.cloudfront.HttpVersion;
 import software.amazon.awscdk.services.cloudfront.OriginRequestPolicy;
 import software.amazon.awscdk.services.cloudfront.PriceClass;
-import software.amazon.awscdk.services.cloudfront.ResponseHeadersContentSecurityPolicy;
-import software.amazon.awscdk.services.cloudfront.ResponseHeadersContentTypeOptions;
-import software.amazon.awscdk.services.cloudfront.ResponseHeadersFrameOptions;
-import software.amazon.awscdk.services.cloudfront.ResponseHeadersPolicy;
-import software.amazon.awscdk.services.cloudfront.ResponseHeadersReferrerPolicy;
-import software.amazon.awscdk.services.cloudfront.ResponseHeadersStrictTransportSecurity;
-import software.amazon.awscdk.services.cloudfront.ResponseSecurityHeadersBehavior;
 import software.amazon.awscdk.services.cloudfront.SecurityPolicyProtocol;
 import software.amazon.awscdk.services.cloudfront.ViewerProtocolPolicy;
 import software.amazon.awscdk.services.cloudfront.origins.FunctionUrlOrigin;
@@ -83,6 +78,34 @@ public class DiceDevStack extends Stack {
     static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
             + "connect-src 'self' https://api.drand.sh https://api2.drand.sh https://api3.drand.sh "
             + "https://drand.cloudflare.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+
+    /**
+     * Headers de segurança de todas as respostas. Vão por CloudFront Function (viewer response) e não por
+     * response headers policy própria: o plano Free não aceita policy customizada, mas inclui edge compute.
+     */
+    static final Map<String, String> SECURITY_HEADERS = securityHeaders();
+
+    private static Map<String, String> securityHeaders() {
+        Map<String, String> h = new LinkedHashMap<>();
+        h.put("content-security-policy", CSP);
+        h.put("strict-transport-security", "max-age=31536000");
+        h.put("x-content-type-options", "nosniff");
+        h.put("x-frame-options", "DENY");
+        h.put("referrer-policy", "strict-origin-when-cross-origin");
+        return h;
+    }
+
+    /** Código da CloudFront Function: sobrescreve os headers, como o Override da policy fazia. */
+    static String securityHeadersCode() {
+        StringBuilder js = new StringBuilder("function handler(event) {\n  var h = event.response.headers;\n");
+        SECURITY_HEADERS.forEach((name, value) -> {
+            if (value.contains("\"") || value.contains("\\")) {
+                throw new IllegalArgumentException("header com aspas ou barra: " + name);
+            }
+            js.append("  h['").append(name).append("'] = { value: \"").append(value).append("\" };\n");
+        });
+        return js.append("  return event.response;\n}\n").toString();
+    }
 
     /** Ações DynamoDB que o app usa (TransactWriteItems é autorizado pelas ações de cada item). */
     static final List<String> TABLE_ACTIONS = List.of("dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem",
@@ -170,19 +193,14 @@ public class DiceDevStack extends Stack {
         killSwitch(cfg, fn, table);
 
         // ---------- CloudFront ----------
-        ResponseHeadersPolicy headers = ResponseHeadersPolicy.Builder.create(this, "SecurityHeaders")
-                .securityHeadersBehavior(ResponseSecurityHeadersBehavior.builder()
-                        .contentSecurityPolicy(ResponseHeadersContentSecurityPolicy.builder()
-                                .contentSecurityPolicy(CSP).override(true).build())
-                        .strictTransportSecurity(ResponseHeadersStrictTransportSecurity.builder()
-                                .accessControlMaxAge(Duration.days(365)).includeSubdomains(false).override(true).build())
-                        .contentTypeOptions(ResponseHeadersContentTypeOptions.builder().override(true).build())
-                        .frameOptions(ResponseHeadersFrameOptions.builder()
-                                .frameOption(HeadersFrameOption.DENY).override(true).build())
-                        .referrerPolicy(ResponseHeadersReferrerPolicy.builder()
-                                .referrerPolicy(HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN).override(true).build())
-                        .build())
-                .build();
+        // Uma função só desta distribuição: o plano não aceita função compartilhada com outra distribuição.
+        software.amazon.awscdk.services.cloudfront.Function headersFn =
+                software.amazon.awscdk.services.cloudfront.Function.Builder.create(this, "SecurityHeaders")
+                        .runtime(FunctionRuntime.JS_2_0)
+                        .code(FunctionCode.fromInline(securityHeadersCode()))
+                        .build();
+        List<FunctionAssociation> headers = List.of(FunctionAssociation.builder()
+                .function(headersFn).eventType(FunctionEventType.VIEWER_RESPONSE).build());
 
         IOrigin appOrigin = FunctionUrlOrigin.withOriginAccessControl(url);
 
@@ -193,7 +211,7 @@ public class DiceDevStack extends Stack {
                 .origin(S3BucketOrigin.withOriginAccessControl(og))
                 .viewerProtocolPolicy(ViewerProtocolPolicy.REDIRECT_TO_HTTPS)
                 .cachePolicy(CachePolicy.CACHING_OPTIMIZED)
-                .responseHeadersPolicy(headers)
+                .functionAssociations(headers)
                 .build());
         behaviors.put("/r/*", appBehavior(appOrigin, headers, AllowedMethods.ALLOW_GET_HEAD));
         behaviors.put("/api/*", appBehavior(appOrigin, headers, AllowedMethods.ALLOW_ALL));
@@ -210,7 +228,7 @@ public class DiceDevStack extends Stack {
                         .origin(S3BucketOrigin.withOriginAccessControl(web))
                         .viewerProtocolPolicy(ViewerProtocolPolicy.REDIRECT_TO_HTTPS)
                         .cachePolicy(CachePolicy.CACHING_OPTIMIZED)
-                        .responseHeadersPolicy(headers)
+                        .functionAssociations(headers)
                         .build())
                 .additionalBehaviors(behaviors)
                 .build();
@@ -306,14 +324,15 @@ public class DiceDevStack extends Stack {
                 .build();
     }
 
-    private static BehaviorOptions appBehavior(IOrigin origin, ResponseHeadersPolicy headers, AllowedMethods methods) {
+    private static BehaviorOptions appBehavior(IOrigin origin, List<FunctionAssociation> headers,
+                                               AllowedMethods methods) {
         return BehaviorOptions.builder()
                 .origin(origin)
                 .viewerProtocolPolicy(ViewerProtocolPolicy.REDIRECT_TO_HTTPS)
                 .allowedMethods(methods)
                 .cachePolicy(CachePolicy.CACHING_DISABLED)
                 .originRequestPolicy(OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER)
-                .responseHeadersPolicy(headers)
+                .functionAssociations(headers)
                 .build();
     }
 }

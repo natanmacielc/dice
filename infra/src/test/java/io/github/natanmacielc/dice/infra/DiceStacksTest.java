@@ -336,7 +336,7 @@ class DiceStacksTest {
     // ---------- WAF e plano ----------
 
     @Test
-    void wafLimitsEachIpAndBlocksWith429() {
+    void wafLimitsEachIpWithDefaultBlock() {
         cert.hasResourceProperties("AWS::WAFv2::WebACL", Map.of(
                 "Scope", "CLOUDFRONT",
                 "DefaultAction", Map.of("Allow", Map.of()),
@@ -344,7 +344,8 @@ class DiceStacksTest {
                         Match.objectLike(Map.of("Name", "rate-per-ip", "Statement", Map.of("RateBasedStatement",
                                         Map.of("Limit", DiceCertStack.RATE_LIMIT_ALL, "AggregateKeyType", "IP",
                                                 "EvaluationWindowSec", 300)),
-                                "Action", Map.of("Block", Map.of("CustomResponse", Map.of("ResponseCode", 429))))),
+                                // Sem CustomResponse: o plano Free recusa web ACL com resposta customizada.
+                                "Action", Map.of("Block", Map.of()))),
                         Match.objectLike(Map.of("Name", "api-rate-per-ip", "Statement", Map.of("RateBasedStatement",
                                 Match.objectLike(Map.of("Limit", DiceCertStack.RATE_LIMIT_API, "AggregateKeyType", "IP",
                                         "ScopeDownStatement", Map.of("ByteMatchStatement", Match.objectLike(Map.of(
@@ -381,14 +382,24 @@ class DiceStacksTest {
 
     @Test
     void securityHeadersOnEveryResponse() {
-        dev.hasResourceProperties("AWS::CloudFront::ResponseHeadersPolicy", Map.of("ResponseHeadersPolicyConfig",
-                Match.objectLike(Map.of("SecurityHeadersConfig", Map.of(
-                        "ContentSecurityPolicy", Map.of("ContentSecurityPolicy", DiceDevStack.CSP, "Override", true),
-                        "StrictTransportSecurity", Map.of("AccessControlMaxAgeSec", 31536000,
-                                "IncludeSubdomains", false, "Override", true),
-                        "ContentTypeOptions", Map.of("Override", true),
-                        "FrameOptions", Map.of("FrameOption", "DENY", "Override", true),
-                        "ReferrerPolicy", Map.of("ReferrerPolicy", "strict-origin-when-cross-origin", "Override", true))))));
+        assertEquals(Map.of(
+                "content-security-policy", DiceDevStack.CSP,
+                "strict-transport-security", "max-age=31536000",
+                "x-content-type-options", "nosniff",
+                "x-frame-options", "DENY",
+                "referrer-policy", "strict-origin-when-cross-origin"), DiceDevStack.SECURITY_HEADERS);
+        String code = DiceDevStack.securityHeadersCode();
+        DiceDevStack.SECURITY_HEADERS.forEach((name, value) ->
+                assertTrue(code.contains("h['" + name + "'] = { value: \"" + value + "\" };"), name));
+        dev.resourceCountIs("AWS::CloudFront::Function", 1);
+        dev.hasResourceProperties("AWS::CloudFront::Function", Map.of("FunctionCode", code,
+                "FunctionConfig", Match.objectLike(Map.of("Runtime", "cloudfront-js-2.0"))));
+        // O plano Free não aceita response headers policy própria.
+        dev.resourceCountIs("AWS::CloudFront::ResponseHeadersPolicy", 0);
+        // Todos os behaviors (default, /og/*, /r/*, /api/*) aplicam a função na resposta.
+        String json = dev.toJSON().toString();
+        int associations = json.split("viewer-response", -1).length - 1;
+        assertEquals(4, associations, "behaviors com a função de headers");
     }
 
     @Test
