@@ -68,7 +68,7 @@ function countdown(roll) {
 async function follow() {
   let roll;
   try {
-    roll = await getJson(`/rolls/${rollId}`);
+    roll = await getJson(`/api/rolls/${rollId}`);
   } catch (e) {
     $('countdown').textContent = e.message;
     if (e.status !== 404) setTimeout(follow, 3000);
@@ -89,7 +89,7 @@ async function follow() {
   await sleep(Math.min(Math.max(0, Date.parse(roll.expectedAt) - Date.now()) + 300, 8000));
   for (;;) {
     try {
-      roll = await getJson(`/rolls/${rollId}`);
+      roll = await getJson(`/api/rolls/${rollId}`);
       setStatus(roll.status);
       if (roll.status === 'RESOLVED') break;
       if (roll.status === 'EXPIRED') $('countdown').textContent = 'O drand está demorando. O pedido continua registrado e público.';

@@ -125,7 +125,7 @@ function renderPython(proof) {
     h('p', { class: 'field-help', text: 'Refaz o dado a partir dos ingredientes:' }),
     command(`python3 -m dice_verify --randomness ${proof.beacon.randomness} --seed ${shellQuote(r.clientSeed)} --nonce ${r.nonce} --expr ${r.expression} --signature ${proof.beacon.signature}`),
     h('p', { class: 'field-help', text: 'Ou confere a prova inteira (cadeia, assinatura de quem rolou, round e resultado):' }),
-    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`),
+    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/api/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`),
     ...playerBlock(proof));
 }
 

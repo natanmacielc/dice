@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  buildExpression, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
+  buildExpression, contentSha256, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
   historyLoadError, initialOf, mergeTables, playerColor, tableLabel, tablesCacheFresh, tablesPage, upsertTable,
   parseRollInput, relativeTime, requestRoll, runChecks, secondsUntil, shellQuote, summarizeLog,
 } from './page-logic.js';
@@ -17,6 +17,15 @@ test('mensagens de erro em português pelo código da API', () => {
   assert.equal(describeError({ error: 'UNSUPPORTED_DIE' }, 400), 'Dado não suportado. Use d4, d6, d8, d10, d12, d20 ou d100.');
   assert.equal(describeError({ error: 'X', message: 'm' }, 500), 'm');
   assert.equal(describeError(null, 502), 'Erro inesperado (HTTP 502).');
+  assert.equal(describeError({ error: 'SERVER_BUSY' }, 503), 'O servidor está no limite agora. Tente de novo em instantes.');
+  assert.match(describeError(null, 429), /Muitos pedidos/);
+});
+
+test('hash do corpo para o x-amz-content-sha256 (bytes UTF-8)', async () => {
+  assert.equal(await contentSha256(''), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+  assert.equal(await contentSha256('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  assert.equal(await contentSha256('é'), await contentSha256('\u00e9'));
+  assert.notEqual(await contentSha256('é'), await contentSha256('e'));
 });
 
 test('formatação', () => {

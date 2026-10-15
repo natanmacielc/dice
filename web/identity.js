@@ -135,7 +135,7 @@ export function tablesMessage({ action, identityKey, at, sessionId = null, curso
   return new TextEncoder().encode(canonicalJson(m));
 }
 
-/** auth de POST /me/tables, assinado por este aparelho (o servidor aceita até 5 min de diferença no relógio). */
+/** auth de POST /api/me/tables, assinado por este aparelho (o servidor aceita até 5 min de diferença no relógio). */
 export async function signTables({ action, sessionId = null, cursor = null, now = new Date() }) {
   const { privateKey, publicKey, identityKey, links } = await identity();
   const at = now.toISOString(); // sempre com milissegundos: 2026-10-15T12:00:00.000Z

@@ -21,6 +21,7 @@ const ERROR_MESSAGES = {
   REQUEST_REPLAY: 'Este pedido já foi registrado.',
   AUTH_EXPIRED: 'O relógio deste aparelho está fora da hora certa. Acerte o relógio para ver suas mesas.',
   AUTH_INVALID: 'O servidor não aceitou a assinatura deste aparelho.',
+  SERVER_BUSY: 'O servidor está no limite agora. Tente de novo em instantes.',
 };
 
 /** Rótulo de uma mesa: o nome, ou "Mesa" com os 4 primeiros caracteres do ID. */
@@ -92,7 +93,18 @@ export function historyLoadError(error) {
 
 export function describeError(body, status) {
   if (body && ERROR_MESSAGES[body.error]) return ERROR_MESSAGES[body.error];
+  // 429 vem do WAF (limite por IP), sem corpo da API.
+  if (!body && status === 429) return 'Muitos pedidos deste endereço. Espere alguns minutos e tente de novo.';
   return body?.message ?? `Erro inesperado (HTTP ${status}).`;
+}
+
+/**
+ * Hex do SHA-256 do corpo (bytes UTF-8), para o header x-amz-content-sha256: com OAC, o CloudFront
+ * assina o POST para a Function URL usando esse hash, e sem ele a origem recusa o pedido.
+ */
+export async function contentSha256(text) {
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function formatDice(dice) {

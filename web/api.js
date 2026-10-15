@@ -1,6 +1,6 @@
 // Acesso à API e verificação no navegador, compartilhado pelas páginas.
 import { signTables } from './identity.js';
-import { describeError, runChecks, summarizeLog } from './page-logic.js';
+import { contentSha256, describeError, runChecks, summarizeLog } from './page-logic.js';
 
 /** Sem resposta em timeoutMs, o fetch é abortado (e.g. conexão que nunca termina). */
 function fetchWithTimeout(url, options, timeoutMs) {
@@ -22,10 +22,12 @@ export async function getJson(url, { timeoutMs = null } = {}) {
 }
 
 export async function postJson(url, body) {
+  const text = JSON.stringify(body);
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(body),
+    // O CloudFront assina o POST para a origem com este hash (OAC da Function URL).
+    headers: { 'content-type': 'application/json', accept: 'application/json', 'x-amz-content-sha256': await contentSha256(text) },
+    body: text,
   });
   const json = await response.json().catch(() => null);
   if (!response.ok) throw apiError(json, response.status);
@@ -37,7 +39,7 @@ export async function myTables(action, { sessionId = null, cursor = null } = {})
   const body = { auth: await signTables({ action, sessionId, cursor }), action };
   if (sessionId) body.sessionId = sessionId;
   if (cursor) body.cursor = cursor;
-  return postJson('/me/tables', body);
+  return postJson('/api/me/tables', body);
 }
 
 const LOG_TIMEOUT_MS = 15_000;
@@ -47,7 +49,7 @@ export async function fetchTable(sessionId) {
   const entries = [];
   let after = 0;
   for (;;) {
-    const page = await getJson(`/sessions/${encodeURIComponent(sessionId)}/log?after=${after}`, { timeoutMs: LOG_TIMEOUT_MS });
+    const page = await getJson(`/api/sessions/${encodeURIComponent(sessionId)}/log?after=${after}`, { timeoutMs: LOG_TIMEOUT_MS });
     entries.push(...page.entries);
     if (page.next === null) return { entries, chainFormat: page.chainFormat };
     after = page.next;
@@ -65,7 +67,7 @@ const chainVerifier = (format) => (format === 'chain-v1' ? import('./verifier/ch
 export async function verifyRoll(rollId) {
   let proof;
   try {
-    proof = await getJson(`/rolls/${encodeURIComponent(rollId)}/proof`);
+    proof = await getJson(`/api/rolls/${encodeURIComponent(rollId)}/proof`);
   } catch (e) {
     return { proof: null, checks: [{ id: 'proof', label: 'Prova obtida do servidor', ok: false, detail: e.message }] };
   }
