@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 @TestProfile(LedgerProfile.class)
-@WithTestResource(DynamoDbLocalResource.class)
+@WithTestResource(LocalAwsResource.class)
 class LedgerApiTest {
 
     static final long LATEST = 1_000_000;

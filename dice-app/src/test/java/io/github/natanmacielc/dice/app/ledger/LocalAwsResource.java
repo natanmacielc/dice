@@ -15,25 +15,37 @@ import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.s3.S3Client;
 
-/** DynamoDB Local em container, com a tabela única (PK, SK) que o CDK criará na Fase 5. */
-public class DynamoDbLocalResource implements QuarkusTestResourceLifecycleManager {
+/**
+ * DynamoDB Local (tabela única PK/SK) e s3mock (bucket das imagens OG) em containers, como o CDK
+ * criará na Fase 5.
+ */
+public class LocalAwsResource implements QuarkusTestResourceLifecycleManager {
 
     static final String TABLE = "dice";
-    private GenericContainer<?> container;
+    static final String BUCKET = "dice-og";
+    static final StaticCredentialsProvider LOCAL = StaticCredentialsProvider.create(AwsBasicCredentials.create("local", "local"));
+    static String s3Endpoint;
+
+    private GenericContainer<?> dynamo;
+    private GenericContainer<?> s3;
 
     @Override
     public Map<String, String> start() {
-        container = new GenericContainer<>(DockerImageName.parse("amazon/dynamodb-local:3.3.1"))
+        dynamo = new GenericContainer<>(DockerImageName.parse("amazon/dynamodb-local:3.3.1"))
                 .withCommand("-jar DynamoDBLocal.jar -inMemory -sharedDb")
                 .withExposedPorts(8000);
-        container.start();
-        String endpoint = "http://" + container.getHost() + ":" + container.getMappedPort(8000);
+        s3 = new GenericContainer<>(DockerImageName.parse("adobe/s3mock:5.2.3")).withExposedPorts(9090);
+        dynamo.start();
+        s3.start();
+        String dynamoEndpoint = "http://" + dynamo.getHost() + ":" + dynamo.getMappedPort(8000);
+        s3Endpoint = "http://" + s3.getHost() + ":" + s3.getMappedPort(9090);
         try (DynamoDbClient client = DynamoDbClient.builder()
                 .httpClientBuilder(UrlConnectionHttpClient.builder())
-                .endpointOverride(URI.create(endpoint))
+                .endpointOverride(URI.create(dynamoEndpoint))
                 .region(Region.US_EAST_1)
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("local", "local")))
+                .credentialsProvider(LOCAL)
                 .build()) {
             client.createTable(r -> r.tableName(TABLE)
                     .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -44,13 +56,34 @@ public class DynamoDbLocalResource implements QuarkusTestResourceLifecycleManage
                             KeySchemaElement.builder().attributeName("PK").keyType(KeyType.HASH).build(),
                             KeySchemaElement.builder().attributeName("SK").keyType(KeyType.RANGE).build()));
         }
-        return Map.of("dice.dynamodb.endpoint-override", endpoint, "dice.dynamodb.table", TABLE);
+        try (S3Client client = s3Client()) {
+            client.createBucket(r -> r.bucket(BUCKET));
+        }
+        return Map.of(
+                "dice.dynamodb.endpoint-override", dynamoEndpoint,
+                "dice.dynamodb.table", TABLE,
+                "dice.s3.endpoint-override", s3Endpoint,
+                "dice.s3.bucket", BUCKET,
+                "dice.public-base-url", "https://dados.exemplo.dev");
+    }
+
+    static S3Client s3Client() {
+        return S3Client.builder()
+                .httpClientBuilder(UrlConnectionHttpClient.builder())
+                .endpointOverride(URI.create(s3Endpoint))
+                .forcePathStyle(true)
+                .region(Region.US_EAST_1)
+                .credentialsProvider(LOCAL)
+                .build();
     }
 
     @Override
     public void stop() {
-        if (container != null) {
-            container.stop();
+        if (dynamo != null) {
+            dynamo.stop();
+        }
+        if (s3 != null) {
+            s3.stop();
         }
     }
 }

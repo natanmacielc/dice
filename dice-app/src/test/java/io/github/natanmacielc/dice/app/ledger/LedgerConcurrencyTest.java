@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 /** Invariante 2: escritas concorrentes na mesma mesa produzem uma cadeia linear, sem buracos nem forks. */
 @QuarkusTest
 @TestProfile(LedgerProfile.class)
-@WithTestResource(DynamoDbLocalResource.class)
+@WithTestResource(LocalAwsResource.class)
 class LedgerConcurrencyTest {
 
     static final long LATEST = 2_000_000;
