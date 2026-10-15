@@ -81,6 +81,12 @@ class DiceStacksTest {
     }
 
     @Test
+    void pairingsExpireByTtl() {
+        dev.hasResourceProperties("AWS::DynamoDB::Table", Map.of(
+                "TimeToLiveSpecification", Map.of("AttributeName", "expiresAt", "Enabled", true)));
+    }
+
+    @Test
     void bucketsArePrivateEncryptedAndTlsOnly() {
         dev.resourceCountIs("AWS::S3::Bucket", 2);
         dev.allResourcesProperties("AWS::S3::Bucket", Map.of(
@@ -172,8 +178,10 @@ class DiceStacksTest {
         Map<String, Map<String, Object>> routes = dev.findResources("AWS::ApiGatewayV2::Route");
         List<String> keys = routes.values().stream()
                 .map(r -> ((Map<?, ?>) r.get("Properties")).get("RouteKey").toString()).sorted().toList();
-        assertEquals(List.of("GET /r/{rollId}", "GET /rolls/{rollId}", "GET /rolls/{rollId}/proof",
-                "GET /sessions/{sessionId}/log", "POST /sessions", "POST /sessions/{sessionId}/rolls"), keys);
+        assertEquals(List.of("GET /pairings/{pairingId}", "GET /r/{rollId}", "GET /rolls/{rollId}",
+                "GET /rolls/{rollId}/proof", "GET /sessions/{sessionId}/log", "POST /pairings",
+                "POST /pairings/{pairingId}/device", "POST /pairings/{pairingId}/identity", "POST /sessions",
+                "POST /sessions/{sessionId}/rolls"), keys);
     }
 
     @Test
@@ -184,7 +192,8 @@ class DiceStacksTest {
                 "DefaultRouteSettings", Map.of("ThrottlingRateLimit", 20, "ThrottlingBurstLimit", 40),
                 "RouteSettings", Map.of(
                         DiceDevStack.ROUTE_CREATE_SESSION, Map.of("ThrottlingRateLimit", 1, "ThrottlingBurstLimit", 5),
-                        DiceDevStack.ROUTE_CREATE_ROLL, Map.of("ThrottlingRateLimit", 5, "ThrottlingBurstLimit", 10))));
+                        DiceDevStack.ROUTE_CREATE_ROLL, Map.of("ThrottlingRateLimit", 5, "ThrottlingBurstLimit", 10),
+                        DiceDevStack.ROUTE_CREATE_PAIRING, Map.of("ThrottlingRateLimit", 1, "ThrottlingBurstLimit", 5))));
     }
 
     // ---------- CloudFront e DNS ----------
@@ -205,6 +214,8 @@ class DiceStacksTest {
                         Match.objectLike(Map.of("PathPattern", "/rolls/*", "ViewerProtocolPolicy", "redirect-to-https",
                                 "AllowedMethods", List.of("GET", "HEAD"))),
                         Match.objectLike(Map.of("PathPattern", "/sessions*", "ViewerProtocolPolicy", "redirect-to-https",
+                                "AllowedMethods", Match.arrayWith(List.of("POST")))),
+                        Match.objectLike(Map.of("PathPattern", "/pairings*", "ViewerProtocolPolicy", "redirect-to-https",
                                 "AllowedMethods", Match.arrayWith(List.of("POST")))))))));
     }
 

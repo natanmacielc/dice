@@ -83,6 +83,7 @@ public class DiceDevStack extends Stack {
 
     static final String ROUTE_CREATE_SESSION = "POST /sessions";
     static final String ROUTE_CREATE_ROLL = "POST /sessions/{sessionId}/rolls";
+    static final String ROUTE_CREATE_PAIRING = "POST /pairings";
 
     public DiceDevStack(Construct scope, String id, StackProps props, DiceConfig cfg, ICertificate certificate) {
         super(scope, id, props);
@@ -92,6 +93,8 @@ public class DiceDevStack extends Stack {
                 .partitionKey(Attribute.builder().name("PK").type(AttributeType.STRING).build())
                 .sortKey(Attribute.builder().name("SK").type(AttributeType.STRING).build())
                 .billingMode(BillingMode.PAY_PER_REQUEST)
+                // Só os pareamentos de aparelhos (PAIRING#) têm expiresAt; a cadeia nunca expira.
+                .timeToLiveAttribute("expiresAt")
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
                         .pointInTimeRecoveryEnabled(true).build())
                 .deletionProtection(true)
@@ -148,6 +151,7 @@ public class DiceDevStack extends Stack {
         Map<String, Object> routeSettings = new LinkedHashMap<>();
         routeSettings.put(ROUTE_CREATE_SESSION, throttle(1, 5));
         routeSettings.put(ROUTE_CREATE_ROLL, throttle(5, 10));
+        routeSettings.put(ROUTE_CREATE_PAIRING, throttle(1, 5));
         cfnStage.addPropertyOverride("RouteSettings", routeSettings);
 
         HttpLambdaIntegration integration = new HttpLambdaIntegration("AppIntegration", live);
@@ -157,6 +161,10 @@ public class DiceDevStack extends Stack {
         route(api, integration, "/rolls/{rollId}", HttpMethod.GET);
         route(api, integration, "/rolls/{rollId}/proof", HttpMethod.GET);
         route(api, integration, "/r/{rollId}", HttpMethod.GET);
+        route(api, integration, "/pairings", HttpMethod.POST);
+        route(api, integration, "/pairings/{pairingId}", HttpMethod.GET);
+        route(api, integration, "/pairings/{pairingId}/device", HttpMethod.POST);
+        route(api, integration, "/pairings/{pairingId}/identity", HttpMethod.POST);
 
         // ---------- CloudFront ----------
         ResponseHeadersPolicy headers = ResponseHeadersPolicy.Builder.create(this, "SecurityHeaders")
@@ -189,6 +197,7 @@ public class DiceDevStack extends Stack {
         behaviors.put("/r/*", apiRead);
         behaviors.put("/rolls/*", apiRead);
         behaviors.put("/sessions*", apiWrite);
+        behaviors.put("/pairings*", apiWrite);
 
         Distribution distribution = Distribution.Builder.create(this, "Cdn")
                 .domainNames(List.of(cfg.domainName()))
