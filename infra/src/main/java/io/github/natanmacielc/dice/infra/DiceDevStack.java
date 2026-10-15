@@ -84,6 +84,7 @@ public class DiceDevStack extends Stack {
     static final String ROUTE_CREATE_SESSION = "POST /sessions";
     static final String ROUTE_CREATE_ROLL = "POST /sessions/{sessionId}/rolls";
     static final String ROUTE_CREATE_PAIRING = "POST /pairings";
+    static final String ROUTE_MY_TABLES = "POST /me/tables";
 
     public DiceDevStack(Construct scope, String id, StackProps props, DiceConfig cfg, ICertificate certificate) {
         super(scope, id, props);
@@ -152,6 +153,7 @@ public class DiceDevStack extends Stack {
         routeSettings.put(ROUTE_CREATE_SESSION, throttle(1, 5));
         routeSettings.put(ROUTE_CREATE_ROLL, throttle(5, 10));
         routeSettings.put(ROUTE_CREATE_PAIRING, throttle(1, 5));
+        routeSettings.put(ROUTE_MY_TABLES, throttle(5, 10));
         cfnStage.addPropertyOverride("RouteSettings", routeSettings);
 
         HttpLambdaIntegration integration = new HttpLambdaIntegration("AppIntegration", live);
@@ -165,6 +167,7 @@ public class DiceDevStack extends Stack {
         route(api, integration, "/pairings/{pairingId}", HttpMethod.GET);
         route(api, integration, "/pairings/{pairingId}/device", HttpMethod.POST);
         route(api, integration, "/pairings/{pairingId}/identity", HttpMethod.POST);
+        route(api, integration, "/me/tables", HttpMethod.POST);
 
         // ---------- CloudFront ----------
         ResponseHeadersPolicy headers = ResponseHeadersPolicy.Builder.create(this, "SecurityHeaders")
@@ -198,6 +201,7 @@ public class DiceDevStack extends Stack {
         behaviors.put("/rolls/*", apiRead);
         behaviors.put("/sessions*", apiWrite);
         behaviors.put("/pairings*", apiWrite);
+        behaviors.put("/me/*", apiWrite);
 
         Distribution distribution = Distribution.Builder.create(this, "Cdn")
                 .domainNames(List.of(cfg.domainName()))

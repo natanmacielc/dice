@@ -179,7 +179,7 @@ class DiceStacksTest {
         List<String> keys = routes.values().stream()
                 .map(r -> ((Map<?, ?>) r.get("Properties")).get("RouteKey").toString()).sorted().toList();
         assertEquals(List.of("GET /pairings/{pairingId}", "GET /r/{rollId}", "GET /rolls/{rollId}",
-                "GET /rolls/{rollId}/proof", "GET /sessions/{sessionId}/log", "POST /pairings",
+                "GET /rolls/{rollId}/proof", "GET /sessions/{sessionId}/log", "POST /me/tables", "POST /pairings",
                 "POST /pairings/{pairingId}/device", "POST /pairings/{pairingId}/identity", "POST /sessions",
                 "POST /sessions/{sessionId}/rolls"), keys);
     }
@@ -193,7 +193,8 @@ class DiceStacksTest {
                 "RouteSettings", Map.of(
                         DiceDevStack.ROUTE_CREATE_SESSION, Map.of("ThrottlingRateLimit", 1, "ThrottlingBurstLimit", 5),
                         DiceDevStack.ROUTE_CREATE_ROLL, Map.of("ThrottlingRateLimit", 5, "ThrottlingBurstLimit", 10),
-                        DiceDevStack.ROUTE_CREATE_PAIRING, Map.of("ThrottlingRateLimit", 1, "ThrottlingBurstLimit", 5))));
+                        DiceDevStack.ROUTE_CREATE_PAIRING, Map.of("ThrottlingRateLimit", 1, "ThrottlingBurstLimit", 5),
+                        DiceDevStack.ROUTE_MY_TABLES, Map.of("ThrottlingRateLimit", 5, "ThrottlingBurstLimit", 10))));
     }
 
     // ---------- CloudFront e DNS ----------
@@ -216,6 +217,8 @@ class DiceStacksTest {
                         Match.objectLike(Map.of("PathPattern", "/sessions*", "ViewerProtocolPolicy", "redirect-to-https",
                                 "AllowedMethods", Match.arrayWith(List.of("POST")))),
                         Match.objectLike(Map.of("PathPattern", "/pairings*", "ViewerProtocolPolicy", "redirect-to-https",
+                                "AllowedMethods", Match.arrayWith(List.of("POST")))),
+                        Match.objectLike(Map.of("PathPattern", "/me/*", "ViewerProtocolPolicy", "redirect-to-https",
                                 "AllowedMethods", Match.arrayWith(List.of("POST")))))))));
     }
 
