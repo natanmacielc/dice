@@ -26,7 +26,10 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Verificar uma prova: `cd tools/verify-py && python3 -m dice_verify.proof prova.json`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
 - Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl dice-core compile`, depois `java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
-- Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive`
+- Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive` e `DRAND_LIVE=1 node --test web/verifier/drand-verify.test.mjs`
+- Imagem OG dentro da imagem do AWS Lambda (fora do CI, precisa de Docker): `./mvnw -pl dice-app -am verify -Plambda`
+- Rebuild do drand-client vendorizado: `tools/vendor/drand-client/build.sh` (o SHA-256 tem de bater com web/vendor/README.md)
+- Imagens OG estáticas (web/static): `java -cp dice-app/target/classes io.github.natanmacielc.dice.app.og.OgImageRenderer <dir>`
 - Infra, sem deploy: `cdk synth` e `cdk diff` (Fase 5; o módulo infra/ fica fora do reactor Maven).
 - CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main e confere se `spec/test-vectors.json` bate com o gerador. As actions são fixadas por SHA.
 - Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
@@ -39,6 +42,8 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Cadeia de hash (chain-v1): uma por mesa, entradas REQUEST, ROUND e RESULT. hash = SHA-256(prevHash + tipo + payload canônico). Payload em JSON canônico (subconjunto do RFC 8785) com seq, sessionId e rollId. prevHash da seq 1 = 64 zeros. Nonce começa em 1.
 - Resolução sob demanda: qualquer leitura (roll, prova, log) resolve pendentes cujo round alvo já existe. EXPIRED é só exibição (pendente mais de 60 s após o round alvo); não é estado gravado.
 - IDs de mesa e roll: 16 caracteres base32 Crockford minúsculo (80 bits). Página do roll: /r/{rollId}.
+- Web: /r/{rollId} é HTML do Quarkus (Qute, com Open Graph); o resto de web/ é estático e o build copia para o jar. O navegador busca o round direto no drand e verifica a BLS com o drand-client vendorizado (web/vendor). Nunca use innerHTML com dado da API.
+- Imagem OG: Java2D com a fonte Inter do jar, gerada pela resolução vencedora e salva em S3 (og/{rollId}.png). No Linux sem fontconfig (Lambda), o renderer configura sun.awt.fontconfig sozinho.
 - Não existe server_seed.
 - Verificação BLS: só no navegador (Fase 4). O backend checa randomness == SHA-256(signature) e o guarda de relógio: latest só é aceito a ±1 round do esperado por floor((agora - genesis)/3) + 1.
 
