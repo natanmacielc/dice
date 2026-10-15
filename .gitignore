@@ -25,3 +25,4 @@ __pycache__/
 *.key
 *.p12
 *.jks
+cdk-outputs.json

@@ -28,7 +28,10 @@ from dice_verify.player import link_message, links_valid, player_message  # noqa
 
 def call(base: str, method: str, path: str, body: dict | None = None) -> dict:
     data = None if body is None else json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(base + path, data=data, method=method, headers={"content-type": "application/json"})
+    headers = {"content-type": "application/json"}
+    if data is not None:
+        headers["x-amz-content-sha256"] = hashlib.sha256(data).hexdigest()  # OAC da Function URL
+    req = urllib.request.Request(base + "/api" + path, data=data, method=method, headers=headers)
     with urllib.request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read())
 
