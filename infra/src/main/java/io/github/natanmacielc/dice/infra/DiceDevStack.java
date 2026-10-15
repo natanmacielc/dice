@@ -194,8 +194,9 @@ public class DiceDevStack extends Stack {
 
         // ---------- CloudFront ----------
         // Uma função só desta distribuição: o plano não aceita função compartilhada com outra distribuição.
+        // ID novo: "SecurityHeaders" era a response headers policy, e o CloudFormation não troca o tipo de um recurso.
         software.amazon.awscdk.services.cloudfront.Function headersFn =
-                software.amazon.awscdk.services.cloudfront.Function.Builder.create(this, "SecurityHeaders")
+                software.amazon.awscdk.services.cloudfront.Function.Builder.create(this, "SecurityHeadersFn")
                         .runtime(FunctionRuntime.JS_2_0)
                         .code(FunctionCode.fromInline(securityHeadersCode()))
                         .build();

@@ -392,6 +392,10 @@ class DiceStacksTest {
         DiceDevStack.SECURITY_HEADERS.forEach((name, value) ->
                 assertTrue(code.contains("h['" + name + "'] = { value: \"" + value + "\" };"), name));
         dev.resourceCountIs("AWS::CloudFront::Function", 1);
+        // Regressão: reaproveitar o ID lógico da antiga response headers policy quebra o changeset
+        // ("Update of resource type is not permitted").
+        assertTrue(dev.findResources("AWS::CloudFront::Function").keySet().stream()
+                .noneMatch(id -> id.startsWith("SecurityHeadersE66B69D3")), "ID lógico da policy antiga");
         dev.hasResourceProperties("AWS::CloudFront::Function", Map.of("FunctionCode", code,
                 "FunctionConfig", Match.objectLike(Map.of("Runtime", "cloudfront-js-2.0"))));
         // O plano Free não aceita response headers policy própria.
