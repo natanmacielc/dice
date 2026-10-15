@@ -1,0 +1,58 @@
+{@io.github.natanmacielc.dice.app.api.RollPage page}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{page.title}</title>
+  <meta name="description" content="{page.description}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Dado Verificável">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="{page.title}">
+  <meta property="og:description" content="{page.description}">
+  <meta property="og:url" content="{page.url}">
+  <meta property="og:image" content="{page.image}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{page.title}">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/roll.js"></script>
+</head>
+<body>
+<main class="wrap" id="roll" data-roll-id="{page.rollId}">
+  <header><a class="brand" href="/">🎲 Dado Verificável</a></header>
+
+  <section class="card result">
+    <p class="status" id="status" data-status="{page.status}">{page.statusLabel}</p>
+    <p class="expression">{page.expression}</p>
+    <p class="total" id="total">{page.totalText}</p>
+    <p class="dice" id="dice">{page.diceText}</p>
+    <p class="countdown" id="countdown"></p>
+    <dl class="facts">
+      <dt>Seed</dt><dd>{page.clientSeed}</dd>
+      <dt>Nonce</dt><dd>{page.nonce}</dd>
+      <dt>Round alvo</dt><dd>{page.targetRound} (drand quicknet)</dd>
+      <dt>Pedido em</dt><dd>{page.requestedAt}</dd>
+      <dt>Mesa</dt><dd><code>{page.sessionId}</code></dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>Verificação neste navegador</h2>
+    <ul class="checks" id="checks"><li class="muted">Aguardando o resultado…</li></ul>
+    <p id="verdict" class="verdict"></p>
+    <noscript><p>Sem JavaScript, verifique a prova com a CLI: <code>python3 -m dice_verify.proof prova.json</code></p></noscript>
+    <p class="links"><a href="/rolls/{page.rollId}/proof">prova (JSON)</a> · <a href="/sessions/{page.sessionId}/log">log da mesa (JSON)</a></p>
+  </section>
+
+  <section class="card">
+    <h2>A mesa inteira</h2>
+    <p class="muted">Confere a cadeia de todas as rolagens desta mesa, inclusive as pendentes: nenhuma pode ter sido escondida ou alterada.</p>
+    <button type="button" id="verify-session" class="secondary">Verificar a mesa inteira</button>
+    <p id="session-result" class="muted"></p>
+  </section>
+</main>
+</body>
+</html>

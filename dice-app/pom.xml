@@ -57,10 +57,28 @@
             <artifactId>quarkus-rest-jackson</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-qute</artifactId>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb</artifactId>
             <exclusions>
                 <!-- Só o cliente HTTP do JDK (url-connection): menor e melhor para Lambda. -->
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>netty-nio-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>apache-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <exclusions>
                 <exclusion>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>netty-nio-client</artifactId>
@@ -102,6 +120,32 @@
     <build>
         <plugins>
             <plugin>
+                <!-- Serve web/ pelo próprio app (local e testes). Em produção o CloudFront serve do S3. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-web</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../web</directory>
+                                    <excludes>
+                                        <exclude>**/*.test.mjs</exclude>
+                                        <exclude>**/README.md</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.platform.version}</version>
@@ -120,8 +164,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Testes contra o drand real ficam fora do build padrão; use o profile live. -->
-                    <excludedGroups>live</excludedGroups>
+                    <!-- Fora do build padrão: drand real (profile live) e imagem do Lambda (profile lambda). -->
+                    <excludedGroups>live,lambda</excludedGroups>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
@@ -142,6 +186,22 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <groups>live</groups>
+                            <excludedGroups combine.self="override"/>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- ./mvnw -pl dice-app -am verify -Plambda -->
+            <id>lambda</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>lambda</groups>
                             <excludedGroups combine.self="override"/>
                         </configuration>
                     </plugin>

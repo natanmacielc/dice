@@ -6,7 +6,7 @@ import java.util.List;
 public record RollRecord(String rollId, String sessionId, long nonce, String clientSeed, String expression,
                          long targetRound, String requestedAt, long requestSeq, String status,
                          Long resultSeq, Long round, String randomness, String signature,
-                         List<Integer> dice, Integer modifier, Integer total) {
+                         List<Integer> dice, Integer modifier, Integer total, boolean ogImage) {
 
     public static final String PENDING = "PENDING";
     public static final String RESOLVED = "RESOLVED";

@@ -3,6 +3,7 @@ package io.github.natanmacielc.dice.app.ledger;
 import io.github.natanmacielc.dice.app.beacon.Beacon;
 import io.github.natanmacielc.dice.app.beacon.BeaconClient;
 import io.github.natanmacielc.dice.app.beacon.BeaconUnavailableException;
+import io.github.natanmacielc.dice.app.og.OgImageService;
 import io.github.natanmacielc.dice.core.DiceRoller;
 import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.RollResult;
@@ -20,11 +21,13 @@ public class ResolutionService {
     private final BeaconClient beacon;
     private final LedgerRepository ledger;
     private final Clock clock;
+    private final OgImageService ogImages;
 
-    public ResolutionService(BeaconClient beacon, LedgerRepository ledger, Clock clock) {
+    public ResolutionService(BeaconClient beacon, LedgerRepository ledger, Clock clock, OgImageService ogImages) {
         this.beacon = beacon;
         this.ledger = ledger;
         this.clock = clock;
+        this.ogImages = ogImages;
     }
 
     /** Resolve se o round alvo já foi publicado; senão, ou com o drand fora, devolve o roll como está. */
@@ -48,6 +51,11 @@ public class ResolutionService {
             throw new IllegalStateException("beacon devolveu round " + b.round() + " para o alvo " + roll.targetRound());
         }
         RollResult result = DiceRoller.roll(b.randomness(), roll.clientSeed(), roll.nonce(), roll.expression());
-        return ledger.appendResolution(roll, b, result);
+        LedgerRepository.Resolution resolution = ledger.appendResolution(roll, b, result);
+        if (resolution.won()) {
+            // Só quem gravou a resolução publica a imagem; falha aqui não desfaz a resolução.
+            ogImages.tryPublish(resolution.roll());
+        }
+        return resolution.roll();
     }
 }

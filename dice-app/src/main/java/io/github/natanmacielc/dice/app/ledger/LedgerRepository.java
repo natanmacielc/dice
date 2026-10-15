@@ -104,7 +104,8 @@ public class LedgerRepository {
                 resolved ? str(item, "signature") : null,
                 resolved ? item.get("dice").l().stream().map(v -> Integer.parseInt(v.n())).toList() : null,
                 resolved ? (int) num(item, "modifier") : null,
-                resolved ? (int) num(item, "total") : null));
+                resolved ? (int) num(item, "total") : null,
+                item.containsKey("ogImage") && Boolean.TRUE.equals(item.get("ogImage").bool())));
     }
 
     /**
@@ -148,7 +149,7 @@ public class LedgerRepository {
                     put(pending));
             if (transact(items, "pedido na mesa " + sessionId, attempt) == Outcome.DONE) {
                 return new Requested(new RollRecord(rollId, sessionId, nonce, clientSeed, expression, targetRound,
-                        requestedAt, seq, RollRecord.PENDING, null, null, null, null, null, null, null), entry);
+                        requestedAt, seq, RollRecord.PENDING, null, null, null, null, null, null, null, false), entry);
             }
         }
         throw new ChainContentionException("mesa " + sessionId + " ocupada; tente de novo");
@@ -156,9 +157,10 @@ public class LedgerRepository {
 
     /**
      * Grava ROUND e RESULT em sequência. O roll só muda se ainda estiver PENDING, então dois
-     * resolvedores concorrentes não duplicam entradas: o perdedor relê e devolve o estado atual.
+     * resolvedores concorrentes não duplicam entradas: o perdedor relê e devolve o estado atual
+     * com {@code won = false}.
      */
-    public RollRecord appendResolution(RollRecord roll, Beacon beacon, RollResult result) {
+    public Resolution appendResolution(RollRecord roll, Beacon beacon, RollResult result) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             SessionRecord session = findSession(roll.sessionId())
                     .orElseThrow(() -> new NotFoundException("mesa " + roll.sessionId()));
@@ -210,10 +212,23 @@ public class LedgerRepository {
                     dropPending);
             Outcome outcome = transact(items, "resolução do roll " + roll.rollId(), attempt);
             if (outcome == Outcome.DONE || outcome == Outcome.ROLL_ALREADY_RESOLVED) {
-                return findRoll(roll.rollId()).orElseThrow();
+                return new Resolution(findRoll(roll.rollId()).orElseThrow(), outcome == Outcome.DONE);
             }
         }
         throw new ChainContentionException("mesa " + roll.sessionId() + " ocupada; tente de novo");
+    }
+
+    /** Estado do roll depois da resolução; {@code won} diz se foi esta chamada que gravou. */
+    public record Resolution(RollRecord roll, boolean won) {
+    }
+
+    /** Marca que a imagem OG do roll foi publicada. */
+    public void markOgImage(String rollId) {
+        dynamo.updateItem(r -> r.tableName(table)
+                .key(key(rollPk(rollId), META))
+                .updateExpression("SET ogImage = :t")
+                .conditionExpression("attribute_exists(PK)")
+                .expressionAttributeValues(Map.of(":t", AttributeValue.fromBool(true))));
     }
 
     /** Roll recém-pedido e a entrada REQUEST gravada (para o recibo). */
