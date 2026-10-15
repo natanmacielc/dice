@@ -9,6 +9,7 @@ import io.github.natanmacielc.dice.app.ledger.RequestReplayException;
 import io.github.natanmacielc.dice.app.ledger.RollPendingException;
 import io.github.natanmacielc.dice.app.ledger.TableReadOnlyException;
 import io.github.natanmacielc.dice.app.pairing.PairingException;
+import io.github.natanmacielc.dice.app.tables.TablesException;
 import io.github.natanmacielc.dice.core.DiceException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
@@ -39,6 +40,11 @@ public class ErrorMappers {
     @ServerExceptionMapper
     public Response replay(RequestReplayException e) {
         return error(409, "REQUEST_REPLAY", e.getMessage());
+    }
+
+    @ServerExceptionMapper
+    public Response tables(TablesException e) {
+        return error(e.status(), e.code(), e.getMessage());
     }
 
     @ServerExceptionMapper

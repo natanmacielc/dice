@@ -37,6 +37,22 @@ final class TestPlayers {
         return Player.sign(BRUNO_SK, BRUNO_PK, sessionId, seed, canonical(expression), "Bruno", newRequestId());
     }
 
+    /** Chave Ed25519 nova, em hex (semente privada e chave pública crua). */
+    record Keys(String sk, String pk) {
+    }
+
+    static Keys newKeys() {
+        try {
+            java.security.KeyPair pair = java.security.KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+            byte[] seed = ((java.security.interfaces.EdECPrivateKey) pair.getPrivate()).getBytes().orElseThrow();
+            byte[] spki = pair.getPublic().getEncoded();
+            byte[] raw = java.util.Arrays.copyOfRange(spki, spki.length - 32, spki.length);
+            return new Keys(HexFormat.of().formatHex(seed), HexFormat.of().formatHex(raw));
+        } catch (java.security.GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     static String newRequestId() {
         byte[] b = new byte[16];
         ThreadLocalRandom.current().nextBytes(b);

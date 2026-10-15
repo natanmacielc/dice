@@ -1,6 +1,7 @@
 package io.github.natanmacielc.dice.app.ledger;
 
 import io.github.natanmacielc.dice.app.beacon.BeaconClient;
+import io.github.natanmacielc.dice.app.tables.TablesService;
 import io.github.natanmacielc.dice.core.ClientSeed;
 import io.github.natanmacielc.dice.core.DiceExpression;
 import io.github.natanmacielc.dice.core.Quicknet;
@@ -26,12 +27,15 @@ public class RollService {
     private final ResolutionService resolution;
     private final BeaconClient beacon;
     private final Clock clock;
+    private final TablesService tables;
 
-    public RollService(LedgerRepository ledger, ResolutionService resolution, BeaconClient beacon, Clock clock) {
+    public RollService(LedgerRepository ledger, ResolutionService resolution, BeaconClient beacon, Clock clock,
+                       TablesService tables) {
         this.ledger = ledger;
         this.resolution = resolution;
         this.beacon = beacon;
         this.clock = clock;
+        this.tables = tables;
     }
 
     public SessionRecord createSession(String name) {
@@ -71,11 +75,15 @@ public class RollService {
             throw new InvalidPlayerException("PLAYER_SIGNATURE_INVALID",
                     "a assinatura não confere com mesa, seed, expressão canônica, identidade, apelido e requestId");
         }
-        if (session(sessionId).chainFormat() != ChainFormat.CHAIN_V2) {
+        SessionRecord session = session(sessionId);
+        if (session.chainFormat() != ChainFormat.CHAIN_V2) {
             throw new TableReadOnlyException("mesa " + sessionId + " é chain-v1 e não aceita rolls novos");
         }
         long targetRound = beacon.latest().round() + 2;
-        return ledger.appendRequest(sessionId, seed.value(), canonical, targetRound, player);
+        LedgerRepository.Requested requested = ledger.appendRequest(sessionId, seed.value(), canonical, targetRound, player);
+        // Lista de mesas do jogador (só navegação): fora da transação da cadeia, falha não desfaz o pedido.
+        tables.touchQuietly(player.identityKey(), session);
+        return requested;
     }
 
     public RollRecord roll(String rollId) {
