@@ -1,4 +1,7 @@
-"""Cadeia chain-v1 e prova de um roll (spec/ALGORITHM.md, seção 6). Só stdlib."""
+"""Cadeias chain-v1 e chain-v2 e prova de um roll (spec/ALGORITHM.md, seções 6 e 7).
+
+A chain-v1 usa só a stdlib; a assinatura Ed25519 da chain-v2 usa a pyca/cryptography.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +12,8 @@ from datetime import datetime, timezone
 from .core import DiceError, parse_expression, randomness_matches_signature, roll
 
 CHAIN_FORMAT = "chain-v1"
+CHAIN_FORMAT_V2 = "chain-v2"
+CHAIN_FORMATS = (CHAIN_FORMAT, CHAIN_FORMAT_V2)
 QUICKNET_NETWORK = "quicknet"
 QUICKNET_CHAIN_HASH = "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
 QUICKNET_GENESIS = 1692803367
@@ -110,10 +115,37 @@ def _check_entry(e, previous, prev_hash_of_first: str) -> None:
         raise ChainError("CHAIN_HASH_MISMATCH", f"hash da seq {e['seq']} não confere")
 
 
-def _check_segment(entries: list, prev_hash_of_first: str) -> None:
+def _check_player(e, seen: set) -> None:
+    """chain-v2: 6. player bem formado; 7. vínculos até o aparelho; 8. assinatura do pedido;
+    9. requestId inédito no segmento."""
+    from .player import links_valid, player_message, player_problem, verify_ed25519
+
+    p = e["payload"]
+    problem = player_problem(p.get("player"))
+    if problem:
+        raise ChainError("CHAIN_STRUCTURE", f"REQUEST seq {e['seq']}: {problem}")
+    if not all(isinstance(p.get(k), str) for k in ("sessionId", "clientSeed", "expression")):
+        raise ChainError("CHAIN_STRUCTURE", f"REQUEST seq {e['seq']} sem sessionId, clientSeed ou expression")
+    player = p["player"]
+    if not links_valid(player["identityKey"], player["links"], player["publicKey"]):
+        raise ChainError("CHAIN_PLAYER_SIGNATURE", f"vínculos do aparelho à identidade inválidos no REQUEST seq {e['seq']}")
+    message = player_message(
+        p["sessionId"], p["clientSeed"], p["expression"], player["identityKey"], player["name"], player["requestId"]
+    )
+    if not verify_ed25519(player["publicKey"], message, player["signature"]):
+        raise ChainError("CHAIN_PLAYER_SIGNATURE", f"assinatura do jogador inválida no REQUEST seq {e['seq']}")
+    if player["requestId"] in seen:
+        raise ChainError("CHAIN_REQUEST_REPLAY", f"requestId repetido no REQUEST seq {e['seq']}")
+    seen.add(player["requestId"])
+
+
+def _check_segment(entries: list, prev_hash_of_first: str, chain_format: str = CHAIN_FORMAT) -> None:
     previous = None
+    seen: set = set()
     for e in entries:
         _check_entry(e, previous, prev_hash_of_first)
+        if chain_format == CHAIN_FORMAT_V2 and e["type"] == "REQUEST":
+            _check_player(e, seen)
         previous = e
 
 
@@ -125,9 +157,11 @@ def _outcome(fn, *args) -> tuple[bool, str | None, str | None]:
     return True, None, None
 
 
-def verify_segment(entries: list, prev_hash_of_first: str = GENESIS_PREV_HASH):
-    """Seção 6.4. Devolve (válido, código, mensagem)."""
-    return _outcome(_check_segment, entries, prev_hash_of_first)
+def verify_segment(entries: list, prev_hash_of_first: str = GENESIS_PREV_HASH, chain_format: str = CHAIN_FORMAT):
+    """Seção 6.4 (chain-v1) ou 7.3 (chain-v2). Devolve (válido, código, mensagem)."""
+    if chain_format not in CHAIN_FORMATS:
+        raise ValueError(f"formato desconhecido: {chain_format}")
+    return _outcome(_check_segment, entries, prev_hash_of_first, chain_format)
 
 
 def _structure(msg: str) -> ChainError:
@@ -160,7 +194,7 @@ def _check_proof(proof) -> None:
     if (
         not isinstance(proof, dict)
         or proof.get("algorithm") != "dice-v1"
-        or proof.get("chainFormat") != CHAIN_FORMAT
+        or proof.get("chainFormat") not in CHAIN_FORMATS
         or not isinstance(drand, dict)
         or drand.get("network") != QUICKNET_NETWORK
         or drand.get("chainHash") != QUICKNET_CHAIN_HASH
@@ -170,7 +204,8 @@ def _check_proof(proof) -> None:
         raise _structure("cabeçalho da prova inválido")
     # 2. Segmento (prevHash esperado = o da própria primeira entrada)
     first_prev = entries[0].get("prevHash") if isinstance(entries[0], dict) else GENESIS_PREV_HASH
-    _check_segment(entries, first_prev)
+    chain_format = proof["chainFormat"]
+    _check_segment(entries, first_prev, chain_format)
 
     # 3. Forma da prova
     request, result = entries[0], entries[-1]
@@ -256,8 +291,10 @@ def _check_proof(proof) -> None:
         for f in fields:
             if f not in target or not _same(target[f], source[f]):
                 raise ChainError("PROOF_SUMMARY_MISMATCH", f"campo {f} do resumo não bate")
+    if chain_format == CHAIN_FORMAT_V2 and ("player" not in summary or not _same(summary["player"], req["player"])):
+        raise ChainError("PROOF_SUMMARY_MISMATCH", "campo player do resumo não bate")
 
 
 def verify_proof(proof) -> tuple[bool, str | None, str | None]:
-    """Seção 6.5. Devolve (válido, código, mensagem)."""
+    """Seção 6.5 (chain-v1) ou 7.4 (chain-v2). Devolve (válido, código, mensagem)."""
     return _outcome(_check_proof, proof)

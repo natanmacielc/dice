@@ -76,7 +76,8 @@ export function timeOf(round) {
   return (QUICKNET.genesisTime + (round - 1) * QUICKNET.periodSeconds) * 1000;
 }
 
-async function checkEntry(e, previous, prevHashOfFirst) {
+/** Checagens 1 a 5 da seção 6.4 para uma entrada. A chain-v2 reaproveita. */
+export async function checkEntry(e, previous, prevHashOfFirst) {
   // 1. Estrutura
   if (!isPlainObject(e) || !Number.isSafeInteger(e.seq) || e.seq < 1 || !TYPES.has(e.type)
     || typeof e.prevHash !== 'string' || !HEX64.test(e.prevHash)
