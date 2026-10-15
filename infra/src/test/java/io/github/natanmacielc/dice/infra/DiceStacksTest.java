@@ -35,8 +35,8 @@ class DiceStacksTest {
                 "account", "111111111111",
                 "hostedZoneId", "Z000EXAMPLE",
                 "zoneName", "nimbos.solutions",
-                "domainName", "dices.nimbos.solutions",
-                "githubRepo", "natanmacielc/dices",
+                "domainName", "dice.nimbos.solutions",
+                "githubRepo", "natanmacielc/dice",
                 "githubEnvironment", "dev",
                 "functionZip", functionZip.toString(),
                 "webDir", webDir.toString()));
@@ -132,7 +132,7 @@ class DiceStacksTest {
                 "Timeout", 25,
                 "SnapStart", Map.of("ApplyOn", "PublishedVersions"),
                 "Environment", Map.of("Variables", Match.objectLike(Map.of(
-                        "DICE_PUBLIC_BASE_URL", "https://dices.nimbos.solutions",
+                        "DICE_PUBLIC_BASE_URL", "https://dice.nimbos.solutions",
                         "DICE_DYNAMODB_TABLE", Match.anyValue(),
                         "DICE_S3_BUCKET", Match.anyValue())))));
         dev.hasResourceProperties("AWS::Lambda::Alias", Map.of("Name", "live"));
@@ -304,7 +304,7 @@ class DiceStacksTest {
     @Test
     void distributionServesTheDomainOverModernTls() {
         dev.hasResourceProperties("AWS::CloudFront::Distribution", Map.of("DistributionConfig", Match.objectLike(Map.of(
-                "Aliases", List.of("dices.nimbos.solutions"),
+                "Aliases", List.of("dice.nimbos.solutions"),
                 "DefaultRootObject", "index.html",
                 "PriceClass", "PriceClass_All",
                 "ViewerCertificate", Match.objectLike(Map.of(
@@ -393,9 +393,9 @@ class DiceStacksTest {
     @Test
     void dnsAliasesPointToCloudFront() {
         Map<String, Object> toCdn = Map.of("DNSName", Map.of("Fn::GetAtt", List.of(cdnLogicalId(), "DomainName")));
-        dev.hasResourceProperties("AWS::Route53::RecordSet", Map.of("Name", "dices.nimbos.solutions.", "Type", "A",
+        dev.hasResourceProperties("AWS::Route53::RecordSet", Map.of("Name", "dice.nimbos.solutions.", "Type", "A",
                 "HostedZoneId", "Z000EXAMPLE", "AliasTarget", Match.objectLike(toCdn)));
-        dev.hasResourceProperties("AWS::Route53::RecordSet", Map.of("Name", "dices.nimbos.solutions.", "Type", "AAAA",
+        dev.hasResourceProperties("AWS::Route53::RecordSet", Map.of("Name", "dice.nimbos.solutions.", "Type", "AAAA",
                 "HostedZoneId", "Z000EXAMPLE", "AliasTarget", Match.objectLike(toCdn)));
     }
 
@@ -406,9 +406,9 @@ class DiceStacksTest {
     @Test
     void certificateIsDnsValidatedInUsEast1() {
         cert.hasResourceProperties("AWS::CertificateManager::Certificate", Map.of(
-                "DomainName", "dices.nimbos.solutions",
+                "DomainName", "dice.nimbos.solutions",
                 "ValidationMethod", "DNS",
-                "DomainValidationOptions", List.of(Map.of("DomainName", "dices.nimbos.solutions",
+                "DomainValidationOptions", List.of(Map.of("DomainName", "dice.nimbos.solutions",
                         "HostedZoneId", "Z000EXAMPLE"))));
     }
 
@@ -439,7 +439,7 @@ class DiceStacksTest {
                         "Effect", "Allow",
                         "Condition", Map.of("StringEquals", Map.of(
                                 "token.actions.githubusercontent.com:aud", "sts.amazonaws.com",
-                                "token.actions.githubusercontent.com:sub", "repo:natanmacielc/dices:environment:dev")),
+                                "token.actions.githubusercontent.com:sub", "repo:natanmacielc/dice:environment:dev")),
                         "Principal", Map.of("Federated", Match.anyValue()))), "Version", "2012-10-17")));
     }
 

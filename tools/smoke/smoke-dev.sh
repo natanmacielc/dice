@@ -2,7 +2,7 @@
 # Smoke test pós-deploy: cria mesa e roll assinado reais, espera o drand, verifica a prova de forma
 # independente (verificador Python) e confere página, imagem OG e headers de segurança.
 # Precisa da pyca/cryptography (pip install -r tools/smoke/requirements.txt).
-# Uso: tools/smoke/smoke-dev.sh https://dices.nimbos.solutions [URL_DA_FUNCAO]
+# Uso: tools/smoke/smoke-dev.sh https://dice.nimbos.solutions [URL_DA_FUNCAO]
 # Com URL_DA_FUNCAO (output FunctionUrl da DiceDevStack), confere que a origem recusa quem não é o CloudFront.
 set -euo pipefail
 BASE="${1:?uso: smoke-dev.sh <url> [url-da-funcao]}"

@@ -25,8 +25,8 @@ Contexto (em `cdk.json` ou `-c chave=valor`):
 | chave | padrão | |
 |---|---|---|
 | `hostedZoneId` | — | obrigatório para Cert/Dev; sem ele só a stack do OIDC é sintetizada |
-| `zoneName` / `domainName` | `nimbos.solutions` / `dices.nimbos.solutions` | |
-| `githubRepo` / `githubEnvironment` | `natanmacielc/dices` / `dev` | quem pode assumir a role de deploy |
+| `zoneName` / `domainName` | `nimbos.solutions` / `dice.nimbos.solutions` | |
+| `githubRepo` / `githubEnvironment` | `natanmacielc/dice` / `dev` | quem pode assumir a role de deploy |
 | `existingOidcProviderArn` | — | se a conta já tem o provider OIDC do GitHub |
 | `reservedConcurrency` | — | contas novas (limite 10) não podem reservar |
 | `alertEmail` | — | e-mail dos alertas (SNS do kill switch e AWS Budgets); no deploy vem da variável `ALERT_EMAIL` |
@@ -49,7 +49,7 @@ Contexto (em `cdk.json` ou `-c chave=valor`):
 3. No GitHub, em *Settings → Environments*, crie o environment `dev`:
    - restrinja *Deployment branches* à `main`;
    - variáveis: `AWS_DEPLOY_ROLE_ARN` (da etapa 2), `HOSTED_ZONE_ID` (zona `nimbos.solutions` no Route 53) e, opcional, `ALERT_EMAIL` (alertas de custo e do kill switch).
-4. Faça merge na `main`. O CI roda; se passar, o *Deploy dev* aplica `DiceCertStack`, `DiceDevStack` e `DicePlanStack` e roda o smoke test contra `https://dices.nimbos.solutions`.
+4. Faça merge na `main`. O CI roda; se passar, o *Deploy dev* aplica `DiceCertStack`, `DiceDevStack` e `DicePlanStack` e roda o smoke test contra `https://dice.nimbos.solutions`.
 5. Com `ALERT_EMAIL`, confirme as duas assinaturas do SNS que chegam por e-mail (sem a confirmação, o kill switch desliga o app do mesmo jeito, mas você não fica sabendo).
 
 No primeiro deploy, a validação do certificado por DNS pode levar alguns minutos.

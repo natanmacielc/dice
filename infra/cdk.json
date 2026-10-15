@@ -2,8 +2,8 @@
   "app": "../mvnw -q -B -f pom.xml compile exec:java",
   "context": {
     "zoneName": "nimbos.solutions",
-    "domainName": "dices.nimbos.solutions",
-    "githubRepo": "natanmacielc/dices",
+    "domainName": "dice.nimbos.solutions",
+    "githubRepo": "natanmacielc/dice",
     "githubEnvironment": "dev",
     "functionZip": "../dice-app/target/function.zip",
     "webDir": "../web",

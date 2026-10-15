@@ -3,7 +3,7 @@
 Status: ✅ feito e coberto por teste · ⚠️ risco aceito no dev · ⏳ pendente
 
 ## Identidade e acesso
-- ✅ **Deploy sem chaves de longa duração.** GitHub Actions usa OIDC; a role `dice-github-deploy` só confia em `repo:natanmacielc/dices:environment:dev` (`aud=sts.amazonaws.com`) e só pode `sts:AssumeRole` nas roles do bootstrap do CDK. Sessão de 1 h. (`githubRoleTrustsOnlyTheDevEnvironmentOfTheRepo`, `githubRoleCanOnlyAssumeCdkBootstrapRoles`)
+- ✅ **Deploy sem chaves de longa duração.** GitHub Actions usa OIDC; a role `dice-github-deploy` só confia em `repo:natanmacielc/dice:environment:dev` (`aud=sts.amazonaws.com`) e só pode `sts:AssumeRole` nas roles do bootstrap do CDK. Sessão de 1 h. (`githubRoleTrustsOnlyTheDevEnvironmentOfTheRepo`, `githubRoleCanOnlyAssumeCdkBootstrapRoles`)
 - ✅ **Workflow de deploy não roda código de fork.** `workflow_run` exige `event == push` e o mesmo repositório (um PR de fork com branch `main` também casaria com o filtro de branch).
 - ✅ **IAM mínimo do Lambda.** DynamoDB: `GetItem`, `PutItem`, `UpdateItem`, `DeleteItem`, `Query`, `ConditionCheckItem` só na tabela; S3: `PutObject` só em `og/*`; logs pela policy básica. Nenhum curinga. (`functionRoleHasLeastPrivilege`; mutação com `dynamodb:*` quebra o teste)
 - ✅ **Nenhum segredo no repositório.** Conta, role e zona entram por variáveis do environment do GitHub; varredura de segredos no repo e no `cdk.out`.

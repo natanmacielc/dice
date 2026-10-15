@@ -174,7 +174,7 @@ test('expressão montada pelo seletor sai canônica e respeita os limites', () =
 
 test('rollId a partir de ID ou de link', () => {
   assert.equal(parseRollInput('  0123456789ABCDEF '), '0123456789abcdef');
-  assert.equal(parseRollInput('https://dices.nimbos.solutions/r/0123456789abcdef'), '0123456789abcdef');
+  assert.equal(parseRollInput('https://dice.nimbos.solutions/r/0123456789abcdef'), '0123456789abcdef');
   assert.equal(parseRollInput('/r/0123456789abcdef?x=1'), '0123456789abcdef');
   assert.equal(parseRollInput('0123456789abcdeu'), null); // u não é Crockford
   assert.equal(parseRollInput('/r/0123456789abcdef0'), null);
