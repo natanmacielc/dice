@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dado Verificável</title>
+  <meta name="description" content="Rolagens de dados que qualquer um confere. O resultado vem de um número público do drand que ainda não existe quando você pede.">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1 class="brand">🎲 Dado Verificável</h1>
+    <p class="lead">Rolagens que qualquer pessoa confere. O resultado vem de um número público do
+      <a href="https://drand.love" rel="noopener">drand</a> que ainda não existe quando você pede.</p>
+  </header>
+
+  <section class="card">
+    <h2>1. Mesa</h2>
+    <p id="session-current" hidden>Mesa atual: <code id="session-id"></code>
+      <button type="button" id="session-forget" class="link">trocar</button></p>
+    <div id="session-forms">
+      <form id="session-new">
+        <label>Nome da mesa <small>(opcional)</small>
+          <input name="name" maxlength="64" autocomplete="off"></label>
+        <button type="submit">Criar mesa</button>
+      </form>
+      <form id="session-join">
+        <label>Ou use o ID de uma mesa existente
+          <input name="sessionId" maxlength="16" autocomplete="off" spellcheck="false" placeholder="16 caracteres"></label>
+        <button type="submit" class="secondary">Usar esta mesa</button>
+      </form>
+    </div>
+    <p id="session-error" class="error" role="alert"></p>
+  </section>
+
+  <section class="card">
+    <h2>2. Rolagem</h2>
+    <form id="roll-form">
+      <label>Sua seed <small>escolha antes de rolar; ela entra no cálculo junto com o drand</small>
+        <span class="row">
+          <input name="clientSeed" required maxlength="64" autocomplete="off" spellcheck="false">
+          <button type="button" id="seed-gen" class="secondary">Gerar</button>
+        </span>
+      </label>
+      <label>Expressão <small>NdX+M, com X em 4, 6, 8, 10, 12, 20 ou 100</small>
+        <input name="expression" value="1d20" required maxlength="16" autocomplete="off" spellcheck="false"></label>
+      <p class="chips" id="chips">
+        <button type="button" data-expr="1d4">d4</button>
+        <button type="button" data-expr="1d6">d6</button>
+        <button type="button" data-expr="1d8">d8</button>
+        <button type="button" data-expr="1d10">d10</button>
+        <button type="button" data-expr="1d12">d12</button>
+        <button type="button" data-expr="1d20">d20</button>
+        <button type="button" data-expr="1d100">d100</button>
+      </p>
+      <button type="submit" id="roll-submit" class="primary">Rolar</button>
+      <p id="roll-error" class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <section class="card how">
+    <h2>Como funciona</h2>
+    <ol>
+      <li>Você escolhe a seed e a expressão. O servidor grava o pedido num log público e fixa um round futuro do drand.</li>
+      <li>Segundos depois, o drand publica esse round. Ninguém, nem o servidor, sabia o valor antes.</li>
+      <li>O resultado sai de SHA-256(randomness | seed | nonce). A página do roll recalcula tudo no seu navegador e confere a assinatura do drand.</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>
