@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Pareamento de aparelhos: só repassa dados públicos entre os dois lados (spec/ALGORITHM.md, seção 7.7). */
-@Path("/pairings")
+@Path("/api/pairings")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class PairingResource {
@@ -36,7 +36,7 @@ public class PairingResource {
     @POST
     public Response create() {
         PairingRecord p = pairings.create();
-        return Response.created(URI.create("/pairings/" + p.pairingId())).entity(view(p)).build();
+        return Response.created(URI.create("/api/pairings/" + p.pairingId())).entity(view(p)).build();
     }
 
     @GET

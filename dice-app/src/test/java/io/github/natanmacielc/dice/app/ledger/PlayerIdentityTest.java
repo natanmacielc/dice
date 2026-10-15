@@ -71,16 +71,16 @@ class PlayerIdentityTest {
         String rollId = created.path("rollId");
 
         clock.set(Quicknet.timeOf(LATEST + 2));
-        get("/rolls/" + rollId).then().statusCode(200).body("status", equalTo("RESOLVED"))
+        get("/api/rolls/" + rollId).then().statusCode(200).body("status", equalTo("RESOLVED"))
                 .body("player.name", equalTo("Bruno"));
 
-        Map<String, Object> proof = json(get("/rolls/" + rollId + "/proof"));
+        Map<String, Object> proof = json(get("/api/rolls/" + rollId + "/proof"));
         assertEquals("chain-v2", proof.get("chainFormat"));
         assertEquals(bruno.toPayload(), ((Map<?, ?>) proof.get("roll")).get("player"));
         ChainVerification v = ProofVerifier.verify(proof);
         assertTrue(v.valid(), v.message());
 
-        Map<String, Object> log = json(get("/sessions/" + sessionId + "/log"));
+        Map<String, Object> log = json(get("/api/sessions/" + sessionId + "/log"));
         assertEquals("chain-v2", log.get("chainFormat"));
         List<?> entries = (List<?>) log.get("entries");
         assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH, ChainFormat.CHAIN_V2)
@@ -122,7 +122,7 @@ class PlayerIdentityTest {
                 .then().statusCode(400).body("error", equalTo("PLAYER_SIGNATURE_INVALID"));
 
         assertEquals(0, beacon.latestCalls.get(), "nada disso chega a consultar o drand");
-        assertEquals(List.of(), json(get("/sessions/" + sessionId + "/log")).get("entries"));
+        assertEquals(List.of(), json(get("/api/sessions/" + sessionId + "/log")).get("entries"));
     }
 
     @Test
@@ -146,7 +146,7 @@ class PlayerIdentityTest {
                 .then().statusCode(400).body("error", equalTo("PLAYER_SIGNATURE_INVALID"));
 
         clock.set(Quicknet.timeOf(LATEST + 2));
-        Map<String, Object> proof = json(get("/rolls/" + rollId + "/proof"));
+        Map<String, Object> proof = json(get("/api/rolls/" + rollId + "/proof"));
         assertTrue(ProofVerifier.verify(proof).valid());
         get("/r/" + rollId).then().statusCode(200)
                 .body(containsString(Player.fingerprint(TestPlayers.ANA_PK)))
@@ -160,7 +160,7 @@ class PlayerIdentityTest {
         requestRoll(sessionId, "uma-vez", "2d6", signed).then().statusCode(201);
         requestRoll(sessionId, "uma-vez", "2d6", signed)
                 .then().statusCode(409).body("error", equalTo("REQUEST_REPLAY"));
-        List<?> entries = (List<?>) json(get("/sessions/" + sessionId + "/log")).get("entries");
+        List<?> entries = (List<?>) json(get("/api/sessions/" + sessionId + "/log")).get("entries");
         assertEquals(1, entries.size(), "o pedido reaproveitado não entra na cadeia");
     }
 
@@ -169,19 +169,19 @@ class PlayerIdentityTest {
         String sessionId = newSession();
         String rollId = requestRoll(sessionId, "antigo", "1d6").then().statusCode(201).extract().path("rollId");
         clock.set(Quicknet.timeOf(LATEST + 2));
-        get("/rolls/" + rollId).then().statusCode(200).body("status", equalTo("RESOLVED"));
+        get("/api/rolls/" + rollId).then().statusCode(200).body("status", equalTo("RESOLVED"));
         makeLegacy(sessionId, rollId);
 
         requestRoll(sessionId, "novo", "1d6").then().statusCode(409).body("error", equalTo("TABLE_READ_ONLY"));
 
-        Map<String, Object> log = json(get("/sessions/" + sessionId + "/log"));
+        Map<String, Object> log = json(get("/api/sessions/" + sessionId + "/log"));
         assertEquals("chain-v1", log.get("chainFormat"));
         assertEquals(3, ((List<?>) log.get("entries")).size());
-        Map<String, Object> proof = json(get("/rolls/" + rollId + "/proof"));
+        Map<String, Object> proof = json(get("/api/rolls/" + rollId + "/proof"));
         assertEquals("chain-v1", proof.get("chainFormat"));
         assertFalse(((Map<?, ?>) proof.get("roll")).containsKey("player"));
         assertTrue(ProofVerifier.verify(proof).valid());
-        get("/rolls/" + rollId).then().statusCode(200).body("player", equalTo(null));
+        get("/api/rolls/" + rollId).then().statusCode(200).body("player", equalTo(null));
         get("/r/" + rollId).then().statusCode(200).body(not(containsString("roll-player")));
     }
 

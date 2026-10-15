@@ -13,6 +13,9 @@ import io.github.natanmacielc.dice.app.tables.TablesException;
 import io.github.natanmacielc.dice.core.DiceException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughputExceededException;
+import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededException;
+import software.amazon.awssdk.services.dynamodb.model.ThrottlingException;
 
 /** Erros como {error, message}. Os códigos de entrada inválida são os da spec (ex.: SEED_TOO_LONG). */
 public class ErrorMappers {
@@ -71,6 +74,14 @@ public class ErrorMappers {
     @ServerExceptionMapper
     public Response contention(ChainContentionException e) {
         return Response.fromResponse(error(503, "LEDGER_BUSY", e.getMessage())).header("Retry-After", "1").build();
+    }
+
+    /** Capacidade provisionada do DynamoDB esgotada (teto de custo): o site recusa em vez de cobrar mais. */
+    @ServerExceptionMapper({ProvisionedThroughputExceededException.class, RequestLimitExceededException.class,
+            ThrottlingException.class})
+    public Response throttled(RuntimeException e) {
+        return Response.fromResponse(error(503, "SERVER_BUSY", "servidor ocupado; tente de novo em instantes"))
+                .header("Retry-After", "2").build();
     }
 
     private static Response error(int status, String code, String message) {

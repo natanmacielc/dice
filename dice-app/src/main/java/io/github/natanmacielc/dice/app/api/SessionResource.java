@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Map;
 
-@Path("/sessions")
+@Path("/api/sessions")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SessionResource {
@@ -37,7 +37,7 @@ public class SessionResource {
     @POST
     public Response create(CreateSession body) {
         Map<String, Object> view = Views.session(rolls.createSession(body == null ? null : body.name()));
-        return Response.created(URI.create("/sessions/" + view.get("sessionId"))).entity(view).build();
+        return Response.created(URI.create("/api/sessions/" + view.get("sessionId"))).entity(view).build();
     }
 
     @POST
@@ -46,7 +46,7 @@ public class SessionResource {
         LedgerRepository.Requested r = rolls.requestRoll(sessionId,
                 body == null ? null : body.clientSeed(), body == null ? null : body.expression(),
                 body == null ? null : body.player());
-        return Response.created(URI.create("/rolls/" + r.roll().rollId()))
+        return Response.created(URI.create("/api/rolls/" + r.roll().rollId()))
                 .entity(Views.receipt(r.roll(), r.entry(), rolls.displayStatus(r.roll()))).build();
     }
 

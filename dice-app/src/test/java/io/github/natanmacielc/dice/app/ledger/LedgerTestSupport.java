@@ -19,7 +19,7 @@ final class LedgerTestSupport {
 
     static String newSession() {
         return given().contentType(ContentType.JSON).body("{\"name\":\"Mesa do Dragão\"}")
-                .post("/sessions").then().statusCode(201).extract().path("sessionId");
+                .post("/api/sessions").then().statusCode(201).extract().path("sessionId");
     }
 
     /** Pedido assinado pela Ana de teste. */
@@ -32,7 +32,7 @@ final class LedgerTestSupport {
         if (player != null) {
             body.put("player", player.toPayload());
         }
-        return given().contentType(ContentType.JSON).body(body).post("/sessions/" + sessionId + "/rolls");
+        return given().contentType(ContentType.JSON).body(body).post("/api/sessions/" + sessionId + "/rolls");
     }
 
     static Map<String, Object> json(Response r) {

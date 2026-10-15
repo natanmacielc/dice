@@ -76,21 +76,21 @@ class LedgerApiTest {
                 .body("links.page", notNullValue());
         String rollId = created.path("rollId");
 
-        get("/rolls/" + rollId).then().statusCode(200).body("status", equalTo("PENDING")).body("result", equalTo(null));
-        get("/rolls/" + rollId + "/proof").then().statusCode(409).body("error", equalTo("ROLL_PENDING"));
+        get("/api/rolls/" + rollId).then().statusCode(200).body("status", equalTo("PENDING")).body("result", equalTo(null));
+        get("/api/rolls/" + rollId + "/proof").then().statusCode(409).body("error", equalTo("ROLL_PENDING"));
         assertEquals(List.of(), beacon.roundCalls, "antes do instante do round alvo, nem consulta o drand");
 
         clock.set(Quicknet.timeOf(LATEST + 2));
         Beacon target = FakeBeaconClient.beacon(LATEST + 2);
         RollResult expected = DiceRoller.roll(target.randomness(), "mesa-do-dragão", 1, "2d6+3");
-        get("/rolls/" + rollId).then().statusCode(200)
+        get("/api/rolls/" + rollId).then().statusCode(200)
                 .body("status", equalTo("RESOLVED"))
                 .body("result.dice", equalTo(expected.dice()))
                 .body("result.total", equalTo(expected.total()))
                 .body("result.round", equalTo((int) LATEST + 2))
                 .body("result.randomness", equalTo(target.randomness()));
 
-        Response proof = get("/rolls/" + rollId + "/proof");
+        Response proof = get("/api/rolls/" + rollId + "/proof");
         proof.then().statusCode(200);
         ChainVerification verification = ProofVerifier.verify(json(proof));
         assertTrue(verification.valid(), verification.message());
@@ -98,7 +98,7 @@ class LedgerApiTest {
         Files.createDirectories(out.getParent());
         Files.writeString(out, proof.asString(), StandardCharsets.UTF_8);
 
-        Map<String, Object> log = json(get("/sessions/" + sessionId + "/log"));
+        Map<String, Object> log = json(get("/api/sessions/" + sessionId + "/log"));
         List<?> entries = (List<?>) log.get("entries");
         assertEquals(3, entries.size());
         assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH, ChainFormat.CHAIN_V2).valid());
@@ -110,7 +110,7 @@ class LedgerApiTest {
         String sessionId = newSession();
         String rollId = requestRoll(sessionId, "alvo", "1d20").then().statusCode(201).extract().path("rollId");
         clock.set(Quicknet.timeOf(LATEST + 500));
-        get("/rolls/" + rollId).then().statusCode(200)
+        get("/api/rolls/" + rollId).then().statusCode(200)
                 .body("result.round", equalTo((int) LATEST + 2))
                 .body("result.randomness", equalTo(FakeBeaconClient.beacon(LATEST + 2).randomness()));
         assertEquals(List.of(LATEST + 2), beacon.roundCalls);
@@ -123,11 +123,11 @@ class LedgerApiTest {
         String rollId = requestRoll(sessionId, "queda", "3d6").then().statusCode(201).extract().path("rollId");
         beacon.down = true;
         clock.set(Quicknet.timeOf(LATEST + 2).plusSeconds(30));
-        get("/rolls/" + rollId).then().statusCode(200).body("status", equalTo("PENDING"));
+        get("/api/rolls/" + rollId).then().statusCode(200).body("status", equalTo("PENDING"));
         clock.set(Quicknet.timeOf(LATEST + 2).plusSeconds(61));
-        get("/rolls/" + rollId).then().statusCode(200).body("status", equalTo("EXPIRED"));
+        get("/api/rolls/" + rollId).then().statusCode(200).body("status", equalTo("EXPIRED"));
         beacon.down = false;
-        get("/rolls/" + rollId).then().statusCode(200).body("status", equalTo("RESOLVED"))
+        get("/api/rolls/" + rollId).then().statusCode(200).body("status", equalTo("RESOLVED"))
                 .body("result.round", equalTo((int) LATEST + 2));
     }
 
@@ -141,11 +141,11 @@ class LedgerApiTest {
         requestRoll(sessionId, "s", "21d6").then().statusCode(400).body("error", equalTo("DICE_COUNT_OUT_OF_RANGE"));
         requestRoll(sessionId, "s", "2d6+101").then().statusCode(400).body("error", equalTo("MODIFIER_OUT_OF_RANGE"));
         requestRoll(sessionId, "s", "abc").then().statusCode(400).body("error", equalTo("INVALID_EXPRESSION"));
-        given().contentType(ContentType.JSON).body("{\"clientSeed\":\"s\"}").post("/sessions/" + sessionId + "/rolls")
+        given().contentType(ContentType.JSON).body("{\"clientSeed\":\"s\"}").post("/api/sessions/" + sessionId + "/rolls")
                 .then().statusCode(400).body("error", equalTo("INVALID_REQUEST"));
-        given().contentType(ContentType.JSON).body(Map.of("name", "n".repeat(65))).post("/sessions")
+        given().contentType(ContentType.JSON).body(Map.of("name", "n".repeat(65))).post("/api/sessions")
                 .then().statusCode(400).body("error", equalTo("INVALID_REQUEST"));
-        get("/sessions/" + sessionId + "/log?limit=101").then().statusCode(400);
+        get("/api/sessions/" + sessionId + "/log?limit=101").then().statusCode(400);
         assertEquals(0, beacon.latestCalls.get(), "entrada inválida nem chega a consultar o drand");
     }
 
@@ -153,10 +153,27 @@ class LedgerApiTest {
     void notFoundForUnknownOrMalformedIds() {
         requestRoll("0000000000000000", "s", "1d20").then().statusCode(404).body("error", equalTo("NOT_FOUND"));
         requestRoll("nao-e-um-id", "s", "1d20").then().statusCode(404);
-        get("/rolls/0000000000000000").then().statusCode(404);
-        get("/rolls/0000000000000000/proof").then().statusCode(404);
-        get("/sessions/0000000000000000/log").then().statusCode(404);
+        get("/api/rolls/0000000000000000").then().statusCode(404);
+        get("/api/rolls/0000000000000000/proof").then().statusCode(404);
+        get("/api/sessions/0000000000000000/log").then().statusCode(404);
         assertEquals(0, beacon.latestCalls.get());
+    }
+
+    @Test
+    void apiLivesOnlyUnderTheApiPrefix() {
+        String sessionId = newSession();
+        given().contentType(ContentType.JSON).body(Map.of("name", "x")).post("/sessions").then().statusCode(404);
+        get("/sessions/" + sessionId + "/log").then().statusCode(404);
+        get("/api/sessions/" + sessionId + "/log").then().statusCode(200);
+    }
+
+    @Test
+    void rejectsBodiesAbove16KiB() {
+        String sessionId = newSession();
+        String big = "{\"clientSeed\":\"" + "x".repeat(17 * 1024) + "\",\"expression\":\"1d20\"}";
+        given().contentType(ContentType.JSON).body(big).post("/api/sessions/" + sessionId + "/rolls")
+                .then().statusCode(413);
+        assertEquals(0, beacon.latestCalls.get(), "corpo grande demais nem chega ao serviço");
     }
 
     @Test
@@ -165,7 +182,7 @@ class LedgerApiTest {
         beacon.down = true;
         requestRoll(sessionId, "s", "1d20").then().statusCode(503)
                 .header("Retry-After", "3").body("error", equalTo("BEACON_UNAVAILABLE"));
-        Map<String, Object> log = json(get("/sessions/" + sessionId + "/log"));
+        Map<String, Object> log = json(get("/api/sessions/" + sessionId + "/log"));
         assertEquals(List.of(), log.get("entries"), "nada gravado sem round alvo");
     }
 
@@ -177,11 +194,11 @@ class LedgerApiTest {
             requestRoll(sessionId, "grande-" + i, "4d6+1").then().statusCode(201);
         }
         clock.set(Quicknet.timeOf(LATEST + 2));
-        get("/sessions/" + sessionId + "/log").then().statusCode(200); // resolve os pendentes
+        get("/api/sessions/" + sessionId + "/log").then().statusCode(200); // resolve os pendentes
         Response log = given()
                 .config(RestAssured.config().httpClient(HttpClientConfig.httpClientConfig()
                         .setParam("http.socket.timeout", 10_000)))
-                .get("/sessions/" + sessionId + "/log");
+                .get("/api/sessions/" + sessionId + "/log");
         log.then().statusCode(200).header("content-length", notNullValue());
         assertTrue(log.asByteArray().length > 8192, "o log do teste tem de passar de 8 KB");
         assertEquals(36, ((List<?>) json(log).get("entries")).size());
@@ -193,15 +210,15 @@ class LedgerApiTest {
         for (int i = 0; i < 3; i++) {
             requestRoll(sessionId, "p" + i, "1d6").then().statusCode(201);
         }
-        Map<String, Object> page1 = json(get("/sessions/" + sessionId + "/log?limit=2"));
+        Map<String, Object> page1 = json(get("/api/sessions/" + sessionId + "/log?limit=2"));
         assertEquals(2, ((List<?>) page1.get("entries")).size());
         assertEquals(2, page1.get("next"));
-        Map<String, Object> page2 = json(get("/sessions/" + sessionId + "/log?after=2"));
+        Map<String, Object> page2 = json(get("/api/sessions/" + sessionId + "/log?after=2"));
         assertEquals(1, ((List<?>) page2.get("entries")).size());
         assertNull(page2.get("next"));
 
         clock.set(Quicknet.timeOf(LATEST + 2));
-        Map<String, Object> resolved = json(get("/sessions/" + sessionId + "/log"));
+        Map<String, Object> resolved = json(get("/api/sessions/" + sessionId + "/log"));
         List<?> entries = (List<?>) resolved.get("entries");
         assertEquals(9, entries.size(), "3 REQUEST + 3 pares ROUND/RESULT resolvidos na leitura do log");
         assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH, ChainFormat.CHAIN_V2).valid());
