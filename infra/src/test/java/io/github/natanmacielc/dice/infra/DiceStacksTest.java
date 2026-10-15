@@ -37,6 +37,7 @@ class DiceStacksTest {
                 "zoneName", "nimbos.solutions",
                 "domainName", "dice.nimbos.solutions",
                 "githubRepo", "natanmacielc/dice",
+                "githubSubjectPrefix", "repo:natanmacielc@85594492/dice@1419905727",
                 "githubEnvironment", "dev",
                 "functionZip", functionZip.toString(),
                 "webDir", webDir.toString()));
@@ -439,7 +440,8 @@ class DiceStacksTest {
                         "Effect", "Allow",
                         "Condition", Map.of("StringEquals", Map.of(
                                 "token.actions.githubusercontent.com:aud", "sts.amazonaws.com",
-                                "token.actions.githubusercontent.com:sub", "repo:natanmacielc/dice:environment:dev")),
+                                "token.actions.githubusercontent.com:sub",
+                                "repo:natanmacielc@85594492/dice@1419905727:environment:dev")),
                         "Principal", Map.of("Federated", Match.anyValue()))), "Version", "2012-10-17")));
     }
 

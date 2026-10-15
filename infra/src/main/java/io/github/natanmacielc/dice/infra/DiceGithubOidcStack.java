@@ -39,8 +39,7 @@ public class DiceGithubOidcStack extends Stack {
                 .assumedBy(new WebIdentityPrincipal(provider.getOpenIdConnectProviderArn(), Map.of(
                         "StringEquals", Map.of(
                                 GITHUB_OIDC + ":aud", "sts.amazonaws.com",
-                                GITHUB_OIDC + ":sub",
-                                "repo:" + cfg.githubRepo() + ":environment:" + cfg.githubEnvironment()))))
+                                GITHUB_OIDC + ":sub", cfg.githubSubject()))))
                 .build();
         role.addToPolicy(PolicyStatement.Builder.create()
                 .actions(List.of("sts:AssumeRole"))

@@ -27,6 +27,7 @@ Contexto (em `cdk.json` ou `-c chave=valor`):
 | `hostedZoneId` | — | obrigatório para Cert/Dev; sem ele só a stack do OIDC é sintetizada |
 | `zoneName` / `domainName` | `nimbos.solutions` / `dice.nimbos.solutions` | |
 | `githubRepo` / `githubEnvironment` | `natanmacielc/dice` / `dev` | quem pode assumir a role de deploy |
+| `githubSubjectPrefix` | `repo:natanmacielc@85594492/dice@1419905727` | início do claim `sub` do token do GitHub; o repositório usa o formato imutável (confira com `gh api repos/natanmacielc/dice/actions/oidc/customization/sub`, campo `sub_claim_prefix`) |
 | `existingOidcProviderArn` | — | se a conta já tem o provider OIDC do GitHub |
 | `reservedConcurrency` | — | contas novas (limite 10) não podem reservar |
 | `alertEmail` | — | e-mail dos alertas (SNS do kill switch e AWS Budgets); no deploy vem da variável `ALERT_EMAIL` |
@@ -45,7 +46,7 @@ Contexto (em `cdk.json` ou `-c chave=valor`):
    ```sh
    cd infra && npx aws-cdk@2.1143.0 deploy DiceGithubOidcStack
    ```
-   Anote a saída `DeployRoleArn`.
+   Anote a saída `DeployRoleArn`. Se o provider foi criado à mão depois que a stack já existia (com o mesmo ARN), não passe `existingOidcProviderArn` num redeploy: trocar o provider criado pelo importado apaga o recurso customizado, e ele apaga o provider do ARN, que é o mesmo.
 3. No GitHub, em *Settings → Environments*, crie o environment `dev`:
    - restrinja *Deployment branches* à `main`;
    - variáveis: `AWS_DEPLOY_ROLE_ARN` (da etapa 2), `HOSTED_ZONE_ID` (zona `nimbos.solutions` no Route 53) e, opcional, `ALERT_EMAIL` (alertas de custo e do kill switch).
