@@ -24,6 +24,8 @@ import io.github.natanmacielc.dice.core.chain.ProofVerifier;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.restassured.RestAssured;
+import io.restassured.config.HttpClientConfig;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
@@ -165,6 +167,24 @@ class LedgerApiTest {
                 .header("Retry-After", "3").body("error", equalTo("BEACON_UNAVAILABLE"));
         Map<String, Object> log = json(get("/sessions/" + sessionId + "/log"));
         assertEquals(List.of(), log.get("entries"), "nada gravado sem round alvo");
+    }
+
+    @Test
+    void largeLogIsSentWithContentLength() {
+        // Regressão: acima de 8 KB a resposta saía em blocos com transfer-encoding vazio e nunca terminava.
+        String sessionId = newSession();
+        for (int i = 0; i < 12; i++) {
+            requestRoll(sessionId, "grande-" + i, "4d6+1").then().statusCode(201);
+        }
+        clock.set(Quicknet.timeOf(LATEST + 2));
+        get("/sessions/" + sessionId + "/log").then().statusCode(200); // resolve os pendentes
+        Response log = given()
+                .config(RestAssured.config().httpClient(HttpClientConfig.httpClientConfig()
+                        .setParam("http.socket.timeout", 10_000)))
+                .get("/sessions/" + sessionId + "/log");
+        log.then().statusCode(200).header("content-length", notNullValue());
+        assertTrue(log.asByteArray().length > 8192, "o log do teste tem de passar de 8 KB");
+        assertEquals(36, ((List<?>) json(log).get("entries")).size());
     }
 
     @Test
