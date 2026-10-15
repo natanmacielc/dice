@@ -29,6 +29,8 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive` e `DRAND_LIVE=1 node --test web/verifier/drand-verify.test.mjs`
 - Imagem OG dentro da imagem do AWS Lambda (fora do CI, precisa de Docker): `./mvnw -pl dice-app -am verify -Plambda`
 - Rebuild do drand-client vendorizado: `tools/vendor/drand-client/build.sh` (o SHA-256 tem de bater com web/vendor/README.md)
+- Fonte da web (Bricolage Grotesque, recorte reprodutível): comandos e SHA-256 em web/fonts/README.md.
+- No `quarkus:dev`, mudanças em web/ não recarregam sozinhas (o diretório fica fora do módulo): rode `./mvnw -pl dice-app process-resources` ou reinicie.
 - Imagens OG estáticas (web/static): `java -cp dice-app/target/classes io.github.natanmacielc.dice.app.og.OgImageRenderer <dir>`
 - Infra (fora do reactor Maven): `./mvnw -f infra/pom.xml verify` (CDK assertions, precisa de Node) e, para sintetizar, `cd infra && npx --yes aws-cdk@2.1143.0 synth -c account=111111111111 -c hostedZoneId=Z000EXAMPLE`. Bootstrap e checklist em infra/README.md e infra/SECURITY.md.
 - Deploy: só pelo GitHub Actions (`.github/workflows/deploy-dev.yml`, OIDC). Nunca rode `cdk deploy` nem `aws` localmente.
@@ -46,6 +48,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Resolução sob demanda: qualquer leitura (roll, prova, log) resolve pendentes cujo round alvo já existe. EXPIRED é só exibição (pendente mais de 60 s após o round alvo); não é estado gravado.
 - IDs de mesa e roll: 16 caracteres base32 Crockford minúsculo (80 bits). Página do roll: /r/{rollId}.
 - Web: /r/{rollId} é HTML do Quarkus (Qute, com Open Graph); o resto de web/ é estático e o build copia para o jar. O navegador busca o round direto no drand e verifica a BLS com o drand-client vendorizado (web/vendor). Nunca use innerHTML com dado da API.
+- Web (Fase 6): tema único escuro. Páginas: / (app.js), /r/{rollId} (roll.js) e /confianca.html (confianca.js: explicação e "confira você mesmo"). Peças visuais em web/ui.js, chamadas à API e verificação em web/api.js, lógica pura e testada em web/page-logic.js. O CSP proíbe style inline: animação só por classe CSS ou `el.style.setProperty`. A animação de rolagem nunca mostra número antes do resultado real. O passo a passo da conta (explainRoll) é só exibição; a fonte da verdade é roll() de web/verifier/dice-v1.js. Convite para mesa: /?mesa={sessionId}.
 - AWS: sa-east-1 (certificado do CloudFront em us-east-1), domínio dices.nimbos.solutions. Testes de concorrência chamam o RollService em paralelo (o servidor de teste do Lambda processa um evento por vez).
 - Imagem OG: Java2D com a fonte Inter do jar, gerada pela resolução vencedora e salva em S3 (og/{rollId}.png). No Linux sem fontconfig (Lambda), o renderer configura sun.awt.fontconfig sozinho.
 - Não existe server_seed.
