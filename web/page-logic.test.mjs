@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  buildExpression, criticalOf, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
+  buildExpression, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
   parseRollInput, relativeTime, runChecks, secondsUntil, shellQuote, summarizeLog,
 } from './page-logic.js';
 import { timeOf, verifyProof } from './verifier/chain-v1.js';
@@ -18,6 +18,10 @@ test('mensagens de erro em português pelo código da API', () => {
 });
 
 test('formatação', () => {
+  assert.equal(formatBreakdown([17], 0), '');
+  assert.equal(formatBreakdown([4, 2], 0), '4 + 2');
+  assert.equal(formatBreakdown([4, 2], -1), '4 + 2 − 1');
+  assert.equal(formatBreakdown([12], 5), '12 + 5');
   assert.equal(formatModifier(3), '+3');
   assert.equal(formatModifier(-2), '-2');
   assert.equal(formatModifier(0), '');

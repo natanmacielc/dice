@@ -26,6 +26,13 @@ export function formatDice(dice) {
   return dice.join(' · ');
 }
 
+/** "4 + 2 − 1" para mostrar sob o total; vazio quando é um dado só sem bônus. */
+export function formatBreakdown(dice, modifier = 0) {
+  const parts = dice.length > 1 || modifier ? dice.join(' + ') : '';
+  if (!modifier) return parts;
+  return `${parts} ${modifier > 0 ? '+' : '−'} ${Math.abs(modifier)}`;
+}
+
 export function formatModifier(m) {
   if (m > 0) return `+${m}`;
   if (m < 0) return `${m}`;
