@@ -5,7 +5,8 @@ import software.constructs.Node;
 
 /** Entradas do CDK, todas por contexto (cdk.json ou -c chave=valor). Nada aqui é segredo. */
 public record DiceConfig(String account, Optional<String> hostedZoneId, String zoneName, String domainName,
-                         String githubRepo, String githubEnvironment, Optional<String> existingOidcProviderArn,
+                         String githubRepo, String githubSubjectPrefix, String githubEnvironment,
+                         Optional<String> existingOidcProviderArn,
                          String functionZip, String webDir, Optional<Integer> reservedConcurrency,
                          Optional<String> alertEmail, int tableReadCapacity, int tableWriteCapacity,
                          int killSwitchInvocationsPerHour, int killSwitchDurationMsPerHour) {
@@ -30,6 +31,7 @@ public record DiceConfig(String account, Optional<String> hostedZoneId, String z
                 required(node, "zoneName"),
                 required(node, "domainName"),
                 required(node, "githubRepo"),
+                required(node, "githubSubjectPrefix"),
                 required(node, "githubEnvironment"),
                 optional(node, "existingOidcProviderArn"),
                 required(node, "functionZip"),
@@ -40,6 +42,14 @@ public record DiceConfig(String account, Optional<String> hostedZoneId, String z
                 integer(node, "tableWriteCapacity", FREE_TIER_CAPACITY),
                 integer(node, "killSwitchInvocationsPerHour", DEFAULT_KILL_INVOCATIONS_PER_HOUR),
                 integer(node, "killSwitchDurationMsPerHour", DEFAULT_KILL_DURATION_MS_PER_HOUR));
+    }
+
+    /**
+     * Claim sub do token do GitHub para o environment. O repositório usa o formato imutável
+     * (repo:dono@id/nome@id), que não muda quando o repositório é renomeado.
+     */
+    String githubSubject() {
+        return githubSubjectPrefix + ":environment:" + githubEnvironment;
     }
 
     String publicBaseUrl() {
