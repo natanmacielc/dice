@@ -1,6 +1,7 @@
 // Identidade do jogador (chain-v2, spec/ALGORITHM.md seção 7). Cada aparelho tem a sua chave Ed25519,
 // criada e guardada neste navegador (não exportável, nunca sai daqui). A identidade é a chave raiz do
 // jogador: no primeiro aparelho, a própria chave; nos vinculados, a de quem os vinculou (seção 7.7).
+import { canonicalJson } from './verifier/chain-v1.js';
 import { fingerprint, linkMessage, MAX_LINKS, nameProblem, playerMessage } from './verifier/chain-v2.js';
 
 export { nameProblem };
@@ -9,6 +10,7 @@ const DB_NAME = 'dice-identity';
 const STORE = 'keys';
 const KEY_ID = 'player';
 const NAME_KEY = 'dice.playerName';
+export const TABLES_CONTEXT = 'dice-tables-v1';
 export const UNSUPPORTED = 'Este navegador não assina com Ed25519, que identifica quem rolou. Atualize o navegador para rolar.';
 
 const toHex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
@@ -123,6 +125,23 @@ export function saveName(name) {
   } catch {
     // sem localStorage: o apelido vale só nesta aba
   }
+}
+
+/** Mensagem da lista de mesas (seção 7.8): JSON canônico, campos ausentes ficam de fora. */
+export function tablesMessage({ action, identityKey, at, sessionId = null, cursor = null }) {
+  const m = { context: TABLES_CONTEXT, action, identityKey, at };
+  if (sessionId) m.sessionId = sessionId;
+  if (cursor) m.cursor = cursor;
+  return new TextEncoder().encode(canonicalJson(m));
+}
+
+/** auth de POST /me/tables, assinado por este aparelho (o servidor aceita até 5 min de diferença no relógio). */
+export async function signTables({ action, sessionId = null, cursor = null, now = new Date() }) {
+  const { privateKey, publicKey, identityKey, links } = await identity();
+  const at = now.toISOString(); // sempre com milissegundos: 2026-10-15T12:00:00.000Z
+  const message = tablesMessage({ action, identityKey, at, sessionId, cursor });
+  const signature = new Uint8Array(await globalThis.crypto.subtle.sign({ name: 'Ed25519' }, privateKey, message));
+  return { publicKey, identityKey, links, at, signature: toHex(signature) };
 }
 
 /** Assina o pedido (seção 7.2). expression tem de estar na forma canônica. Devolve o player do POST. */

@@ -1,4 +1,5 @@
 // Acesso à API e verificação no navegador, compartilhado pelas páginas.
+import { signTables } from './identity.js';
 import { describeError, runChecks, summarizeLog } from './page-logic.js';
 
 /** Sem resposta em timeoutMs, o fetch é abortado (e.g. conexão que nunca termina). */
@@ -29,6 +30,14 @@ export async function postJson(url, body) {
   const json = await response.json().catch(() => null);
   if (!response.ok) throw apiError(json, response.status);
   return json;
+}
+
+/** Lista de mesas do jogador (seção 7.8): list, add ou remove, sempre assinado por este aparelho. */
+export async function myTables(action, { sessionId = null, cursor = null } = {}) {
+  const body = { auth: await signTables({ action, sessionId, cursor }), action };
+  if (sessionId) body.sessionId = sessionId;
+  if (cursor) body.cursor = cursor;
+  return postJson('/me/tables', body);
 }
 
 const LOG_TIMEOUT_MS = 15_000;

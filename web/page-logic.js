@@ -19,7 +19,67 @@ const ERROR_MESSAGES = {
   PLAYER_SIGNATURE_INVALID: 'A assinatura do pedido não confere.',
   TABLE_READ_ONLY: 'Esta mesa é antiga, sem identificação de quem rola, e não aceita rolagens novas.',
   REQUEST_REPLAY: 'Este pedido já foi registrado.',
+  AUTH_EXPIRED: 'O relógio deste aparelho está fora da hora certa. Acerte o relógio para ver suas mesas.',
+  AUTH_INVALID: 'O servidor não aceitou a assinatura deste aparelho.',
 };
+
+/** Rótulo de uma mesa: o nome, ou "Mesa" com os 4 primeiros caracteres do ID. */
+export function tableLabel({ name, sessionId }) {
+  return name?.trim() || `Mesa ${sessionId.slice(0, 4)}`;
+}
+
+/** Junta a próxima página da lista de mesas, sem repetir mesa que mudou de posição entre as páginas. */
+export function mergeTables(current, page) {
+  const seen = new Set(current.map((t) => t.sessionId));
+  return [...current, ...page.filter((t) => !seen.has(t.sessionId))];
+}
+
+/** Põe a mesa no topo da lista (criou, entrou ou rolou neste aparelho), mantendo o que já se sabia dela. */
+export function upsertTable(items, table) {
+  const old = items.find((t) => t.sessionId === table.sessionId);
+  return [{ ...old, ...table }, ...items.filter((t) => t.sessionId !== table.sessionId)];
+}
+
+/**
+ * Página da tela sobre as mesas já carregadas. Com hasMore (o servidor tem cursor), a página
+ * incompleta pede a próxima página do servidor (needsFetch); sem, a página fica dentro da lista.
+ */
+export function tablesPage(items, page, size, hasMore) {
+  const last = Math.max(0, Math.ceil(items.length / size) - 1);
+  const p = hasMore ? Math.max(0, page) : Math.min(Math.max(0, page), last);
+  const from = Math.min(p * size, items.length);
+  const to = Math.min(items.length, p * size + size);
+  return {
+    slice: items.slice(from, to), page: p, from, to,
+    hasPrev: p > 0,
+    hasNext: to < items.length || hasMore,
+    needsFetch: hasMore && to - p * size < size,
+  };
+}
+
+/** O cache das suas mesas serve sem pedir ao servidor: mesma identidade e buscado há menos de ttlMs. */
+export function tablesCacheFresh(cache, identityKey, nowMs, ttlMs) {
+  if (!cache || !identityKey || cache.identityKey !== identityKey || !Array.isArray(cache.items)) return false;
+  const age = nowMs - cache.fetchedAt;
+  return age >= 0 && age < ttlMs;
+}
+
+/**
+ * Cor do jogador, a partir da impressão da identidade ("3f9a-c2e1"): matiz dos 2 primeiros bytes,
+ * saturação e luminosidade fixas para o tema escuro. Só exibição; a impressão continua escrita ao lado.
+ */
+export function playerColor(fingerprint) {
+  const hue = Math.round((parseInt(String(fingerprint).slice(0, 4), 16) / 65536) * 360);
+  return Number.isNaN(hue) ? 'hsl(0 0% 70%)' : `hsl(${hue} 80% 68%)`;
+}
+
+/** Inicial do apelido: o primeiro grafema (emoji inteiro, letra com acento), em maiúscula. */
+export function initialOf(name) {
+  const text = String(name ?? '').trim();
+  if (!text) return '?';
+  const [first] = new Intl.Segmenter('pt-BR', { granularity: 'grapheme' }).segment(text);
+  return first.segment.toLocaleUpperCase('pt-BR');
+}
 
 /** Texto para quando o histórico da mesa não carrega (rede, servidor ou tempo esgotado). */
 export function historyLoadError(error) {

@@ -1,7 +1,7 @@
 // Sem IndexedDB no Node: a chave vale só no processo, como numa aba sem armazenamento.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { identity, signRequest } from './identity.js';
+import { identity, signRequest, signTables, tablesMessage } from './identity.js';
 import { linksValid, playerMessage, playerProblem, verifyEd25519 } from './verifier/chain-v2.js';
 
 test('assina um pedido que o verificador aceita', async () => {
@@ -25,4 +25,15 @@ test('primeiro aparelho: a identidade é a própria chave; requestId novo a cada
   assert.deepEqual(id.links, []);
   assert.equal(id.persistent, false);
   assert.match(id.fingerprint, /^[0-9a-f]{4}-[0-9a-f]{4}$/);
+});
+
+test('pedido da lista de mesas: assinado pelo aparelho, campos ausentes fora da mensagem', async () => {
+  const now = new Date('2026-10-15T12:00:00Z');
+  const auth = await signTables({ action: 'add', sessionId: 'kq1t9m3x7c2a8z5r', now });
+  assert.equal(auth.at, '2026-10-15T12:00:00.000Z');
+  const message = tablesMessage({ action: 'add', identityKey: auth.identityKey, at: auth.at, sessionId: 'kq1t9m3x7c2a8z5r' });
+  assert.equal(new TextDecoder().decode(message),
+    `{"action":"add","at":"2026-10-15T12:00:00.000Z","context":"dice-tables-v1","identityKey":"${auth.identityKey}","sessionId":"kq1t9m3x7c2a8z5r"}`);
+  assert.equal(await verifyEd25519(auth.publicKey, message, auth.signature), true);
+  assert.equal(await verifyEd25519(auth.publicKey, tablesMessage({ action: 'remove', identityKey: auth.identityKey, at: auth.at, sessionId: 'kq1t9m3x7c2a8z5r' }), auth.signature), false);
 });

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   buildExpression, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
-  historyLoadError,
+  historyLoadError, initialOf, mergeTables, playerColor, tableLabel, tablesCacheFresh, tablesPage, upsertTable,
   parseRollInput, relativeTime, requestRoll, runChecks, secondsUntil, shellQuote, summarizeLog,
 } from './page-logic.js';
 import { timeOf, verifyProof } from './verifier/chain-v1.js';
@@ -36,6 +36,60 @@ test('histórico que não carrega vira mensagem, não lista vazia (regressão do
   assert.equal(historyLoadError(Object.assign(new Error('Mesa ocupada. Tente de novo.'), { status: 503 })),
     'Não consegui carregar o histórico: Mesa ocupada. Tente de novo.');
   assert.match(historyLoadError(new TypeError('Failed to fetch')), /Confira a conexão/);
+});
+
+test('rótulo de mesa, páginas sem repetição, cor e inicial do jogador', () => {
+  assert.equal(tableLabel({ name: 'Mesa do Dragão', sessionId: 'kq1t9m3x7c2a8z5r' }), 'Mesa do Dragão');
+  assert.equal(tableLabel({ name: '  ', sessionId: 'kq1t9m3x7c2a8z5r' }), 'Mesa kq1t');
+  assert.equal(tableLabel({ sessionId: 'kq1t9m3x7c2a8z5r' }), 'Mesa kq1t');
+  const a = { sessionId: 'a' };
+  const b = { sessionId: 'b' };
+  assert.deepEqual(mergeTables([a, b], [b, { sessionId: 'c' }]).map((t) => t.sessionId), ['a', 'b', 'c']);
+  assert.equal(playerColor('0000-0000'), 'hsl(0 80% 68%)');
+  assert.equal(playerColor('8000-1234'), 'hsl(180 80% 68%)');
+  assert.equal(playerColor('ef2d-4477'), playerColor('ef2d-0000'), 'só os 2 primeiros bytes contam');
+  assert.equal(playerColor('???'), 'hsl(0 0% 70%)');
+  assert.equal(initialOf('ana'), 'A');
+  assert.equal(initialOf('  élio'), 'É');
+  assert.equal(initialOf('🪓 Thorin'), '🪓');
+  assert.equal(initialOf(''), '?');
+  assert.equal(initialOf(null), '?');
+});
+
+test('suas mesas: mesa vai para o topo sem repetir e mantém o que já se sabia dela', () => {
+  const items = [{ sessionId: 'a', name: 'A', lastActiveAt: '1' }, { sessionId: 'b', name: 'B', lastActiveAt: '0' }];
+  assert.deepEqual(upsertTable(items, { sessionId: 'b', lastActiveAt: '2' }),
+    [{ sessionId: 'b', name: 'B', lastActiveAt: '2' }, { sessionId: 'a', name: 'A', lastActiveAt: '1' }]);
+  assert.deepEqual(upsertTable(items, { sessionId: 'c' }).map((t) => t.sessionId), ['c', 'a', 'b']);
+  assert.deepEqual(upsertTable([], { sessionId: 'c' }), [{ sessionId: 'c' }]);
+  assert.equal(items[0].sessionId, 'a', 'não muda a lista original');
+});
+
+test('suas mesas: página da tela sobre o que já veio do servidor', () => {
+  const items = Array.from({ length: 14 }, (_, i) => ({ sessionId: String(i) }));
+  const first = tablesPage(items, 0, 6, false);
+  assert.deepEqual(first.slice.map((t) => t.sessionId), ['0', '1', '2', '3', '4', '5']);
+  assert.deepEqual([first.page, first.from, first.to, first.hasPrev, first.hasNext, first.needsFetch], [0, 0, 6, false, true, false]);
+  const last = tablesPage(items, 2, 6, false);
+  assert.deepEqual([last.from, last.to, last.hasPrev, last.hasNext, last.needsFetch], [12, 14, true, false, false]);
+  // Página incompleta com mais no servidor: busca a próxima página do cursor.
+  const partial = tablesPage(items, 2, 6, true);
+  assert.deepEqual([partial.hasNext, partial.needsFetch], [true, true]);
+  // Removeu mesas e a página ficou além do fim: volta para a última.
+  assert.equal(tablesPage(items.slice(0, 5), 2, 6, false).page, 0);
+  assert.deepEqual(tablesPage([], 0, 6, false), { slice: [], page: 0, from: 0, to: 0, hasPrev: false, hasNext: false, needsFetch: false });
+  assert.equal(tablesPage([], 0, 6, true).needsFetch, true);
+});
+
+test('suas mesas: cache vale só para a mesma identidade e dentro do prazo', () => {
+  const cache = { identityKey: 'k', fetchedAt: 1_000, items: [], next: null };
+  assert.equal(tablesCacheFresh(cache, 'k', 1_000 + 599_999, 600_000), true);
+  assert.equal(tablesCacheFresh(cache, 'k', 1_000 + 600_000, 600_000), false);
+  assert.equal(tablesCacheFresh(cache, 'outra', 1_500, 600_000), false);
+  assert.equal(tablesCacheFresh(cache, 'k', 500, 600_000), false, 'relógio voltou: não confia');
+  assert.equal(tablesCacheFresh(null, 'k', 1_500, 600_000), false);
+  assert.equal(tablesCacheFresh({ identityKey: 'k', fetchedAt: 1_000 }, 'k', 1_500, 600_000), false);
+  assert.equal(tablesCacheFresh(cache, undefined, 1_500, 600_000), false);
 });
 
 test('seed gerada tem 16 caracteres base32 Crockford', () => {

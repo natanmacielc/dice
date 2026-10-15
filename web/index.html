@@ -26,6 +26,9 @@
     <span class="brand-name">Dado <em>Verificável</em></span>
   </a>
   <nav class="topbar-actions">
+    <button type="button" class="avatar-btn" data-open="player-dialog" id="me-btn" aria-label="Você: apelido e aparelhos">
+      <span class="avatar" id="me-avatar" aria-hidden="true">?</span>
+    </button>
     <button type="button" class="chip" data-open="table-dialog" id="table-chip">
       <span class="chip-dot" aria-hidden="true"></span><span id="table-chip-text">Mesa</span>
     </button>
@@ -41,7 +44,7 @@
 </header>
 
 <main class="app">
-  <section class="stage" id="stage" aria-label="Mesa de rolagem">
+  <section class="stage" id="stage" role="button" tabindex="0" aria-label="Rolar o dado">
     <svg class="ring" id="ring" viewBox="0 0 100 100" data-mode="idle" aria-hidden="true">
       <circle class="ring-runes" cx="50" cy="50" r="48"/>
       <circle class="ring-track" cx="50" cy="50" r="44"/>
@@ -120,13 +123,6 @@
     <h2 id="table-title">Mesa</h2>
     <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-  <p class="sheet-lead">Todas as rolagens de uma mesa ficam num registro público encadeado. Chame os amigos para a mesma mesa e todo mundo vê tudo.</p>
-
-  <div class="kv" id="player-row">
-    <span class="kv-label">Você</span><span id="player-label">sem apelido</span>
-    <button type="button" class="copy" data-open="player-dialog">Mudar</button>
-    <button type="button" class="copy" data-open="pair-dialog">Usar em outro aparelho</button>
-  </div>
 
   <div id="table-current" hidden>
     <p class="table-name" id="table-name"></p>
@@ -139,7 +135,12 @@
       Convidar para esta mesa
     </button>
   </div>
-  <p class="muted" id="table-none">Você ainda não tem mesa. Uma é criada sozinha na primeira rolagem, ou crie agora:</p>
+  <p class="muted" id="table-none">Você ainda não está numa mesa. Uma é criada sozinha na primeira rolagem, ou crie agora.</p>
+
+  <button type="button" class="ghost-btn wide my-tables-open" data-open="tables-dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    Suas mesas<span class="my-tables-count" id="my-tables-count" hidden></span>
+  </button>
 
   <form id="table-new" class="stack">
     <label class="field">
@@ -152,7 +153,7 @@
   </form>
   <form id="table-join" class="stack">
     <label class="field">
-      <span class="field-label">Entrar numa mesa existente</span>
+      <span class="field-label">Entrar com o ID de uma mesa</span>
       <span class="field-row">
         <input name="sessionId" maxlength="16" autocomplete="off" spellcheck="false" placeholder="ID com 16 caracteres">
         <button type="submit" class="ghost-btn">Entrar</button>
@@ -162,12 +163,31 @@
   <p class="error" id="table-error" role="alert"></p>
 </dialog>
 
+<dialog class="sheet" id="tables-dialog" aria-labelledby="tables-title">
+  <div class="sheet-head">
+    <h2 id="tables-title">Suas mesas</h2>
+    <div class="sheet-head-actions">
+      <button type="button" class="icon-btn" id="my-tables-refresh" aria-label="Atualizar a lista" title="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg></button>
+      <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
+  <p class="sheet-lead">Mesas em que você rolou ou entrou, em todos os seus aparelhos. As mais recentes primeiro.</p>
+  <p class="field-help" id="my-tables-status" aria-live="polite"></p>
+  <p class="muted" id="my-tables-empty" hidden>Nenhuma mesa ainda. Ao rolar ou entrar numa mesa, ela aparece aqui.</p>
+  <ol class="table-list" id="my-tables-list"></ol>
+  <nav class="tables-pager" id="my-tables-pager" aria-label="Páginas das suas mesas" hidden>
+    <button type="button" class="ghost-btn" id="my-tables-prev">‹ Anterior</button>
+    <span class="tables-range" id="my-tables-range" aria-live="polite"></span>
+    <button type="button" class="ghost-btn" id="my-tables-next">Próxima ›</button>
+  </nav>
+</dialog>
+
 <dialog class="sheet" id="player-dialog" aria-labelledby="player-title">
   <div class="sheet-head">
-    <h2 id="player-title">Quem está rolando?</h2>
+    <h2 id="player-title">Você</h2>
     <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-  <p class="sheet-lead">Cada rolagem sai assinada por uma chave criada neste navegador. O apelido aparece para a mesa; a impressão da chave mostra que foi você, mesmo que outra pessoa use o mesmo apelido.</p>
+  <p class="sheet-lead" id="player-lead">Cada rolagem sai assinada por uma chave deste aparelho. O apelido aparece para a mesa; a impressão mostra que foi você, mesmo que outra pessoa use o mesmo apelido.</p>
   <form id="player-form" class="stack">
     <label class="field">
       <span class="field-label">Apelido</span>
@@ -178,9 +198,14 @@
       <span class="field-help">Até 32 bytes. Fica gravado em cada rolagem; se mudar depois, só vale para as próximas.</span>
     </label>
   </form>
-  <div class="kv">
-    <span class="kv-label">Sua chave</span><code id="player-fingerprint">…</code>
-  </div>
+  <dl class="facts player-facts">
+    <dt>Identidade</dt><dd><span class="avatar" id="player-avatar" aria-hidden="true"></span><code id="player-fingerprint">…</code></dd>
+    <dt>Este aparelho</dt><dd id="player-device">…</dd>
+  </dl>
+  <button type="button" class="ghost-btn wide" data-open="pair-dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="11" height="8" rx="1.5"/><path d="M1 16h15"/><rect x="17" y="8" width="6" height="12" rx="1.5"/></svg>
+    Usar em outro aparelho
+  </button>
   <p class="field-help" id="player-ephemeral" hidden>Este navegador não guarda a chave: ao fechar a aba, você ganha outra. Para manter a mesma identidade, saia do modo privado.</p>
   <p class="error" id="player-error" role="alert"></p>
 </dialog>

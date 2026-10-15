@@ -1,15 +1,16 @@
 // Página inicial: escolhe o dado, rola, anima e confere no navegador.
-import { fetchLog, getJson, postJson, verifyRoll, verifyTable } from './api.js';
+import { fetchLog, getJson, myTables, postJson, verifyRoll, verifyTable } from './api.js';
 import {
-  buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, historyLoadError, relativeTime,
-  requestRoll,
+  buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, historyLoadError, initialOf,
+  mergeTables, playerColor, relativeTime, requestRoll, tableLabel, tablesCacheFresh, tablesPage, upsertTable,
 } from './page-logic.js';
 import { parseExpression } from './verifier/dice-v1.js';
 import { fingerprint } from './verifier/chain-v2.js';
 import { adoptIdentity, identity, linkDevice, nameProblem, saveName, signRequest, storedName } from './identity.js';
 import { acceptIdentity, answerDevice, deviceMac, newSecret, pairingUrl, parsePairingFragment } from './pairing.js';
 import {
-  $, DIE_COLORS, DIE_SIDES, Tray, celebrate, closeDialog, copyText, countUp, dieIcon, h, openDialog, qrSvg, replay, ring,
+  $, DIE_COLORS, DIE_SIDES, Tray, celebrate, closeDialog, copyText, countUp, dieIcon, h, lineIcon, openDialog, qrSvg,
+  replay, ring,
   runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep, toast,
 } from './ui.js';
 
@@ -51,6 +52,8 @@ let sessionId = stored(SESSION_KEY);
 let sessionName = stored(SESSION_NAME_KEY);
 
 function setTable(id, name = null) {
+  // O resultado no palco é da mesa anterior: some ao trocar (durante uma rolagem, resetStage não mexe).
+  if (id !== sessionId) resetStage();
   sessionId = id;
   sessionName = name;
   store(SESSION_KEY, id);
@@ -60,17 +63,41 @@ function setTable(id, name = null) {
 }
 
 function renderTable() {
-  $('table-chip-text').textContent = sessionName || (sessionId ? `Mesa ${sessionId.slice(0, 4)}` : 'Sem mesa');
+  const label = sessionId ? tableLabel({ name: sessionName, sessionId }) : 'Sem mesa';
+  $('table-chip-text').textContent = label;
   $('table-chip').classList.toggle('is-active', !!sessionId);
   $('table-current').hidden = !sessionId;
   $('table-none').hidden = !!sessionId;
-  $('table-name').textContent = sessionName ?? 'Mesa sem nome';
+  $('table-name').textContent = label;
   $('table-id').textContent = sessionId ?? '';
+}
+
+/**
+ * Põe a mesa na sua lista (seção 7.8) e devolve o nome dela. A lista só ajuda a navegar: se falhar,
+ * a mesa continua valendo neste aparelho.
+ */
+async function rememberTable(id) {
+  try {
+    const { table } = await myTables('add', { sessionId: id });
+    changeTables((items) => upsertTable(items, table));
+    return table.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Entra na mesa, fecha as folhas e avisa. */
+function enterTable(id, name, message) {
+  setTable(id, name);
+  closeDialog($('tables-dialog'));
+  closeDialog($('table-dialog'));
+  toast(message);
 }
 
 async function createTable(name) {
   const session = await postJson('/sessions', name ? { name } : {});
   setTable(session.sessionId, session.name ?? null);
+  rememberTable(session.sessionId);
   return session.sessionId;
 }
 
@@ -79,9 +106,9 @@ $('table-new').addEventListener('submit', async (event) => {
   $('table-error').textContent = '';
   const input = event.target.elements.name;
   try {
-    await createTable(input.value.trim());
+    const id = await createTable(input.value.trim());
     input.value = '';
-    toast('Mesa criada');
+    enterTable(id, sessionName, `${tableLabel({ name: sessionName, sessionId: id })} criada`);
   } catch (e) {
     $('table-error').textContent = e.message;
   }
@@ -117,14 +144,14 @@ $('table-join').addEventListener('submit', async (event) => {
     return;
   }
   input.value = '';
-  setTable(id);
-  toast('Você entrou na mesa');
+  const name = await rememberTable(id);
+  enterTable(id, name, `Você entrou na ${tableLabel({ name, sessionId: id })}`);
 });
 
 $('table-id-copy').addEventListener('click', () => copyText(sessionId));
 $('table-invite').addEventListener('click', () => shareLink(`${location.origin}/?mesa=${sessionId}`, 'Entre na minha mesa'));
 
-/** Convite: /?mesa={id} adota a mesa e limpa a URL. */
+/** Convite: /?mesa={id} adota a mesa, põe na sua lista e limpa a URL. */
 async function adoptInvite() {
   const params = new URLSearchParams(location.search);
   const id = params.get('mesa')?.trim().toLowerCase();
@@ -134,23 +161,158 @@ async function adoptInvite() {
   if (!ID_FORMAT.test(id) || id === sessionId) return;
   if (await tableExists(id).catch(() => true)) {
     setTable(id);
-    toast('Você entrou na mesa do convite');
+    const name = await rememberTable(id);
+    if (name) setTable(id, name);
+    toast(`Você entrou na ${tableLabel({ name, sessionId: id })} do convite`);
   } else {
     toast('A mesa do convite não existe mais.');
   }
 }
+
+// ---------- Suas mesas (seção 7.8 da spec) ----------
+
+// A lista fica em cache (memória e localStorage) e só volta ao servidor quando passa do prazo ou no
+// botão de atualizar: o que muda neste aparelho (criar, entrar, rolar, tirar) já atualiza o cache.
+const TABLES_KEY = 'dice.tables';
+const TABLES_TTL_MS = 10 * 60_000;
+const TABLES_PER_PAGE = 6;
+
+function storedTables() {
+  try {
+    const cache = JSON.parse(stored(TABLES_KEY));
+    return Array.isArray(cache?.items) ? cache : null;
+  } catch {
+    return null;
+  }
+}
+
+const tablesList = { cache: storedTables(), page: 0, run: 0, loading: false };
+
+function saveTables(cache) {
+  tablesList.cache = cache;
+  store(TABLES_KEY, cache && JSON.stringify(cache));
+  renderTablesCount();
+  if ($('tables-dialog').open) renderMyTables();
+}
+
+/** Mudança feita neste aparelho: atualiza o cache sem pedir a lista de novo. */
+function changeTables(change) {
+  if (tablesList.cache) saveTables({ ...tablesList.cache, items: change(tablesList.cache.items) });
+}
+
+function renderTablesCount() {
+  const cache = tablesList.cache;
+  $('my-tables-count').hidden = !cache?.items.length;
+  $('my-tables-count').textContent = cache ? `${cache.items.length}${cache.next ? '+' : ''}` : '';
+}
+
+async function loadMyTables(more = false) {
+  const run = ++tablesList.run;
+  const cursor = more ? tablesList.cache?.next : null;
+  tablesList.loading = true;
+  $('my-tables-status').textContent = tablesList.cache?.items.length ? 'Atualizando…' : 'Carregando suas mesas…';
+  renderMyTables();
+  try {
+    const [{ identityKey }, page] = await Promise.all([identity(), myTables('list', { cursor })]);
+    if (run !== tablesList.run) return;
+    const items = cursor ? mergeTables(tablesList.cache.items, page.tables) : page.tables;
+    tablesList.loading = false;
+    if (!cursor) tablesList.page = 0;
+    $('my-tables-status').textContent = '';
+    saveTables({ identityKey, fetchedAt: cursor ? tablesList.cache.fetchedAt : Date.now(), items, next: page.next });
+  } catch (e) {
+    if (run !== tablesList.run) return;
+    tablesList.loading = false;
+    if (cursor) tablesList.page -= 1; // a página seguinte não veio: fica na que já estava
+    $('my-tables-status').textContent = e.message;
+    renderMyTables();
+  }
+}
+
+function tableItem(t) {
+  const current = t.sessionId === sessionId;
+  const remove = h('button', {
+    type: 'button', class: 'icon-btn table-remove', 'aria-label': `Tirar ${tableLabel(t)} da sua lista`, title: 'Tirar da lista',
+    onclick: async () => {
+      try {
+        await myTables('remove', { sessionId: t.sessionId });
+        changeTables((items) => items.filter((x) => x.sessionId !== t.sessionId));
+      } catch (e) {
+        $('my-tables-status').textContent = e.message;
+      }
+    },
+  }, lineIcon('M6 6l12 12M18 6L6 18'));
+  return h('li', { class: `table-item${current ? ' is-current' : ''}` },
+    h('button', {
+      type: 'button', class: 'table-open', 'aria-current': current ? 'true' : null,
+      onclick: () => (current ? closeDialog($('tables-dialog'))
+        : enterTable(t.sessionId, t.name ?? null, `Você está na ${tableLabel(t)}`)),
+    },
+    h('strong', { text: tableLabel(t) }),
+    h('span', { text: current ? 'mesa atual' : `ativa ${relativeTime(t.lastActiveAt)}` })),
+    remove);
+}
+
+function myTablesView() {
+  const cache = tablesList.cache;
+  return tablesPage(cache?.items ?? [], tablesList.page, TABLES_PER_PAGE, !!cache?.next);
+}
+
+function renderMyTables() {
+  const cache = tablesList.cache;
+  const view = myTablesView();
+  tablesList.page = view.page;
+  $('my-tables-list').replaceChildren(...view.slice.map(tableItem));
+  $('my-tables-empty').hidden = tablesList.loading || !cache || cache.items.length > 0;
+  $('my-tables-pager').hidden = !view.hasPrev && !view.hasNext;
+  $('my-tables-range').textContent = view.slice.length
+    ? `${view.from + 1}–${view.to} de ${cache.items.length}${cache.next ? '+' : ''}` : '';
+  $('my-tables-prev').disabled = tablesList.loading || !view.hasPrev;
+  $('my-tables-next').disabled = tablesList.loading || !view.hasNext;
+  $('my-tables-refresh').disabled = tablesList.loading;
+}
+
+function turnTablesPage(delta) {
+  tablesList.page += delta;
+  if (myTablesView().needsFetch) loadMyTables(true);
+  else renderMyTables();
+}
+
+$('my-tables-prev').addEventListener('click', () => turnTablesPage(-1));
+$('my-tables-next').addEventListener('click', () => turnTablesPage(1));
+$('my-tables-refresh').addEventListener('click', () => loadMyTables());
+$('tables-dialog').addEventListener('opened', async () => {
+  tablesList.page = 0;
+  $('my-tables-status').textContent = '';
+  renderMyTables();
+  const me = await identity().catch(() => null);
+  if (!tablesCacheFresh(tablesList.cache, me?.identityKey, Date.now(), TABLES_TTL_MS)) loadMyTables();
+});
+$('table-dialog').addEventListener('opened', () => {
+  $('table-error').textContent = '';
+});
 
 // ---------- Jogador ----------
 
 let playerName = storedName();
 let pendingRoll = false;
 
+/** Avatar: inicial do apelido na cor da identidade (só exibição; a impressão vai escrita ao lado). */
+function paintAvatar(el, name, fp) {
+  el.textContent = initialOf(name);
+  if (fp) el.style.setProperty('--p', playerColor(fp));
+}
+
 async function renderPlayer() {
-  $('player-label').textContent = playerName ?? 'sem apelido';
+  paintAvatar($('me-avatar'), playerName, null);
+  $('me-btn').setAttribute('aria-label', `Você: ${playerName ?? 'sem apelido'}`);
   try {
     const me = await identity();
-    $('player-label').textContent = playerName ? `${playerName} · ${me.fingerprint}` : `sem apelido · ${me.fingerprint}`;
+    paintAvatar($('me-avatar'), playerName, me.fingerprint);
+    paintAvatar($('player-avatar'), playerName, me.fingerprint);
     $('player-fingerprint').textContent = me.fingerprint;
+    $('player-device').textContent = me.links.length
+      ? `vinculado · ${me.deviceFingerprint}` : `principal · ${me.deviceFingerprint}`;
     $('player-ephemeral').hidden = me.persistent;
   } catch (e) {
     $('player-fingerprint').textContent = '—';
@@ -160,6 +322,9 @@ async function renderPlayer() {
 
 $('player-dialog').addEventListener('opened', () => {
   $('player-error').textContent = '';
+  $('player-lead').textContent = pendingRoll
+    ? 'Antes de rolar, escolha como a mesa vai te ver. Cada rolagem sai assinada por uma chave deste aparelho.'
+    : 'Cada rolagem sai assinada por uma chave deste aparelho. O apelido aparece para a mesa; a impressão mostra que foi você, mesmo que outra pessoa use o mesmo apelido.';
   $('player-form').elements.name.value = playerName ?? '';
   renderPlayer();
 });
@@ -274,6 +439,7 @@ async function joinFromLink() {
     $('join-confirm').onclick = async () => {
       try {
         await adoptIdentity(pkg);
+        saveTables(null); // a lista era da identidade anterior
         playerName = pkg.name;
         saveName(pkg.name);
         await renderPlayer();
@@ -309,6 +475,7 @@ function renderChoice() {
   $('mod-value').textContent = formatModifier(state.modifier) || '0';
   const expr = expression();
   $('roll-expr').textContent = expr;
+  $('stage').setAttribute('aria-label', `Rolar ${expr}`);
   if (document.activeElement !== $('expression')) $('expression').value = expr;
 }
 
@@ -479,8 +646,8 @@ async function roll() {
   }
   if (!playerName) {
     // Primeira rolagem: escolhe o apelido e a rolagem segue em seguida.
-    openDialog($('player-dialog'));
     pendingRoll = true;
+    openDialog($('player-dialog'));
     return;
   }
   const clientSeed = $('seed').value;
@@ -504,6 +671,9 @@ async function roll() {
     });
     if (recreated) toast(RECREATED[reason]);
     bumpHistory();
+    // O servidor também põe a mesa no topo da sua lista ao rolar (melhor esforço).
+    changeTables((items) => upsertTable(items,
+      { sessionId, lastActiveAt: new Date().toISOString(), ...(sessionName ? { name: sessionName } : {}) }));
     const result = await waitForResult(receipt);
     await reveal(result);
     refreshHistory();
@@ -522,6 +692,15 @@ async function roll() {
 }
 
 $('roll-btn').addEventListener('click', roll);
+// Clicar (ou Enter) no dado também rola; Espaço já rola pelo atalho global.
+$('stage').addEventListener('click', () => {
+  if (!document.querySelector('dialog[open]')) roll();
+});
+$('stage').addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' || event.repeat) return;
+  event.preventDefault();
+  roll();
+});
 document.addEventListener('keydown', (event) => {
   if (event.code !== 'Space' || event.repeat || document.querySelector('dialog[open]')) return;
   if (event.target.closest?.('input, textarea, select, button, summary, a, [contenteditable]')) return;
@@ -586,6 +765,13 @@ async function withFingerprints(items) {
 
 const STATUS_TEXT = { PENDING: 'aguardando o drand', EXPIRED: 'atrasado' };
 
+function playerLine(player) {
+  const avatar = h('span', { class: 'avatar avatar-sm', 'aria-hidden': 'true' });
+  paintAvatar(avatar, player.name, player.fingerprint && player.fingerprint !== '?' ? player.fingerprint : null);
+  return h('span', { class: 'h-player' }, avatar, h('span', { class: 'h-name', text: player.name }),
+    h('code', { text: player.fingerprint ?? '' }));
+}
+
 function renderHistory() {
   $('history-failed').hidden = !historyError;
   $('history-failed-text').textContent = historyError ?? '';
@@ -604,7 +790,7 @@ function renderHistory() {
         h('span', { class: 'h-main' },
           h('strong', { text: r.expression }),
           h('span', { text: r.dice ? r.dice.join(' · ') : STATUS_TEXT[r.status] }),
-          r.player ? h('span', { class: 'h-player' }, r.player.name, ' ', h('code', { text: r.player.fingerprint ?? '' })) : null),
+          r.player ? playerLine(r.player) : null),
         h('span', { class: 'h-side' },
           h('span', { class: 'h-total', text: r.total ?? '…' }),
           h('span', { class: 'h-time', text: relativeTime(r.requestedAt) }))));
@@ -640,6 +826,7 @@ joinFromLink();
 newSeed();
 adoptInvite();
 renderTable();
+renderTablesCount();
 renderChoice();
 refreshHistory();
 // Fecha diálogos abertos ao sair da página pelo histórico do navegador.

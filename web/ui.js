@@ -98,6 +98,13 @@ function faceSize(sides, text) {
   return text.length >= 3 ? base * 0.74 : base;
 }
 
+/** Ícone de traço (24×24, mesmo estilo dos botões): um path por string. */
+export function lineIcon(...paths) {
+  const icon = svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' });
+  icon.append(...paths.map((d) => svg('path', { d })));
+  return icon;
+}
+
 /** Ícone estático de um dado (seletor, histórico). */
 export function dieIcon(sides, label = null) {
   const icon = svg('svg', { viewBox: '0 0 200 200', class: 'die-icon', 'aria-hidden': 'true' });

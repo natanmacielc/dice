@@ -61,7 +61,7 @@
     <p class="status-pill" id="status" data-status="{page.status}">{page.statusLabel}</p>
     <p class="roll-expression">{page.expression}</p>
     {#if page.playerName}
-    <p class="roll-player" id="roll-player">por <strong>{page.playerName}</strong> <code class="fingerprint" title="Impressão da chave de quem rolou">{page.playerFingerprint}</code></p>
+    <p class="roll-player" id="roll-player" data-fingerprint="{page.playerFingerprint}">por <strong>{page.playerName}</strong> <code class="fingerprint" title="Impressão da identidade de quem rolou">{page.playerFingerprint}</code></p>
     {/if}
     <div class="result" id="result">
       <p class="total" id="total">{page.totalText}</p>

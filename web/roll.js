@@ -1,6 +1,6 @@
 // Página /r/{rollId}: acompanha o roll, anima o resultado e confere tudo no navegador.
 import { getJson, verifyRoll, verifyTable } from './api.js';
-import { criticalOf, formatBreakdown } from './page-logic.js';
+import { criticalOf, formatBreakdown, playerColor } from './page-logic.js';
 import { parseExpression } from './verifier/dice-v1.js';
 import {
   $, DIE_COLORS, Tray, celebrate, countUp, replay, ring, runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep,
@@ -11,6 +11,9 @@ const STATUS = {
   RESOLVED: 'Resolvido',
   EXPIRED: 'Atrasado: o drand ainda não respondeu',
 };
+
+// Cor de quem rolou: a mesma do histórico, a partir da impressão da identidade.
+$('roll-player')?.style.setProperty('--p', playerColor($('roll-player').dataset.fingerprint));
 
 const root = $('roll');
 const rollId = root.dataset.rollId;
