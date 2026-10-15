@@ -1,9 +1,5 @@
 package io.github.natanmacielc.dice.app.ledger;
 
-import static io.github.natanmacielc.dice.app.ledger.LedgerTestSupport.json;
-import static io.github.natanmacielc.dice.app.ledger.LedgerTestSupport.newSession;
-import static io.github.natanmacielc.dice.app.ledger.LedgerTestSupport.requestRoll;
-import static io.restassured.RestAssured.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +27,11 @@ import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Invariante 2: escritas concorrentes na mesma mesa produzem uma cadeia linear, sem buracos nem forks. */
+/**
+ * Invariante 2: escritas concorrentes na mesma mesa produzem uma cadeia linear, sem buracos nem forks.
+ * Chama o RollService em várias threads: é o equivalente a várias instâncias do Lambda gravando no
+ * mesmo DynamoDB (via HTTP, o servidor de teste do Lambda processa um evento por vez).
+ */
 @QuarkusTest
 @TestProfile(LedgerProfile.class)
 @WithTestResource(LocalAwsResource.class)
@@ -46,6 +46,9 @@ class LedgerConcurrencyTest {
     @Inject
     FakeBeaconClient beacon;
 
+    @Inject
+    RollService rolls;
+
     @BeforeEach
     void reset() {
         clock.set(T0);
@@ -54,9 +57,8 @@ class LedgerConcurrencyTest {
 
     @Test
     void fiftyParallelRequestsOnOneSessionStayLinear() throws Exception {
-        String sessionId = newSession();
-        List<Integer> statuses = parallel(50, i -> requestRoll(sessionId, "p" + i, "1d20").statusCode());
-        assertEquals(List.of(201), statuses.stream().distinct().toList(), "todas as gravações entram");
+        String sessionId = rolls.createSession(null).sessionId();
+        parallel(50, i -> rolls.requestRoll(sessionId, "p" + i, "1d20"));
 
         List<Map<String, Object>> entries = log(sessionId);
         assertEquals(50, entries.size());
@@ -66,16 +68,16 @@ class LedgerConcurrencyTest {
         Set<Long> nonces = new HashSet<>();
         entries.forEach(e -> nonces.add(((Number) payload(e).get("nonce")).longValue()));
         assertEquals(new HashSet<>(LongStream.rangeClosed(1, 50).boxed().toList()), nonces);
-        assertEquals(50, ((Map<?, ?>) json(get("/sessions/" + sessionId + "/log")).get("head")).get("seq"));
+        assertEquals(50, rolls.log(sessionId, 0, 1).session().headSeq());
     }
 
     @Test
     void twentyParallelReadsResolveExactlyOnce() throws Exception {
-        String sessionId = newSession();
-        String rollId = requestRoll(sessionId, "uma-vez", "4d6").then().statusCode(201).extract().path("rollId");
+        String sessionId = rolls.createSession(null).sessionId();
+        String rollId = rolls.requestRoll(sessionId, "uma-vez", "4d6").roll().rollId();
         clock.set(Quicknet.timeOf(LATEST + 2));
 
-        List<Object> dice = parallel(20, i -> get("/rolls/" + rollId).then().statusCode(200).extract().path("result.dice"));
+        List<Object> dice = parallel(20, i -> rolls.roll(rollId).dice());
         assertEquals(1, new HashSet<>(dice).size(), "todos veem o mesmo resultado");
 
         List<Map<String, Object>> entries = log(sessionId);
@@ -85,15 +87,13 @@ class LedgerConcurrencyTest {
 
     @Test
     void mixedRequestsAndResolutionsKeepTheChainLinear() throws Exception {
-        String sessionId = newSession();
-        List<String> pending = parallel(25, i ->
-                requestRoll(sessionId, "a" + i, "2d10").then().statusCode(201).extract().<String>path("rollId"));
+        String sessionId = rolls.createSession(null).sessionId();
+        List<String> pending = parallel(25, i -> rolls.requestRoll(sessionId, "a" + i, "2d10").roll().rollId());
         clock.set(Quicknet.timeOf(LATEST + 2));
 
-        List<Integer> statuses = parallel(50, i -> i % 2 == 0
-                ? get("/rolls/" + pending.get(i / 2)).statusCode()
-                : requestRoll(sessionId, "b" + i, "1d100").statusCode());
-        assertTrue(statuses.stream().allMatch(s -> s == 200 || s == 201), statuses.toString());
+        parallel(50, i -> i % 2 == 0
+                ? rolls.roll(pending.get(i / 2)).status()
+                : rolls.requestRoll(sessionId, "b" + i, "1d100").roll().status());
 
         // 25 REQUEST iniciais + 25 pares ROUND/RESULT + 25 REQUEST novos.
         List<Map<String, Object>> entries = log(sessionId);
@@ -117,18 +117,17 @@ class LedgerConcurrencyTest {
         return (Map<String, Object>) entry.get("payload");
     }
 
-    /** Lê o log inteiro, página por página. */
-    @SuppressWarnings("unchecked")
-    private static List<Map<String, Object>> log(String sessionId) {
+    /** Lê o log inteiro, página por página, no formato JSON da API. */
+    private List<Map<String, Object>> log(String sessionId) {
         List<Map<String, Object>> out = new ArrayList<>();
         long after = 0;
         while (true) {
-            Map<String, Object> page = json(get("/sessions/" + sessionId + "/log?after=" + after));
-            out.addAll((List<Map<String, Object>>) page.get("entries"));
-            if (page.get("next") == null) {
+            RollService.LogPage page = rolls.log(sessionId, after, 100);
+            page.entries().forEach(e -> out.add(e.toJson()));
+            if (page.next() == null) {
                 return out;
             }
-            after = ((Number) page.get("next")).longValue();
+            after = page.next();
         }
     }
 

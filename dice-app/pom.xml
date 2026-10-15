@@ -61,6 +61,11 @@
             <artifactId>quarkus-qute</artifactId>
         </dependency>
         <dependency>
+            <!-- Empacota para AWS Lambda atrás do API Gateway HTTP API (gera target/function.zip). -->
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-amazon-lambda-http</artifactId>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb</artifactId>
             <exclusions>
