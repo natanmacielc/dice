@@ -35,6 +35,13 @@ class OgImageRendererTest {
     }
 
     @Test
+    void playerNameKeepsOnlyGlyphsTheFontDraws() {
+        assertEquals("Thorin", OgImageRenderer.displayable("Thorin \uD83E\uDE93"));
+        assertEquals("Ana Lúcia", OgImageRenderer.displayable(" Ana Lúcia "));
+        assertEquals("", OgImageRenderer.displayable("\uD83C\uDFB2"));
+    }
+
+    @Test
     void longLinesAreTruncatedInsteadOfOverflowing() throws Exception {
         String dice = "dados " + "100 · ".repeat(20);
         BufferedImage img = ImageIO.read(new ByteArrayInputStream(OgImageRenderer.render(

@@ -17,6 +17,7 @@ import io.github.natanmacielc.dice.core.DiceRoller;
 import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.RollResult;
 import io.github.natanmacielc.dice.core.chain.ChainEntry;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
 import io.github.natanmacielc.dice.core.chain.ChainVerification;
 import io.github.natanmacielc.dice.core.chain.ChainVerifier;
 import io.github.natanmacielc.dice.core.chain.ProofVerifier;
@@ -98,7 +99,7 @@ class LedgerApiTest {
         Map<String, Object> log = json(get("/sessions/" + sessionId + "/log"));
         List<?> entries = (List<?>) log.get("entries");
         assertEquals(3, entries.size());
-        assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH).valid());
+        assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH, ChainFormat.CHAIN_V2).valid());
         assertEquals(1, beacon.latestCalls.get(), "latest só no pedido");
     }
 
@@ -183,7 +184,7 @@ class LedgerApiTest {
         Map<String, Object> resolved = json(get("/sessions/" + sessionId + "/log"));
         List<?> entries = (List<?>) resolved.get("entries");
         assertEquals(9, entries.size(), "3 REQUEST + 3 pares ROUND/RESULT resolvidos na leitura do log");
-        assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH).valid());
+        assertTrue(ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH, ChainFormat.CHAIN_V2).valid());
         assertEquals(9, ((Map<?, ?>) resolved.get("head")).get("seq"));
     }
 }

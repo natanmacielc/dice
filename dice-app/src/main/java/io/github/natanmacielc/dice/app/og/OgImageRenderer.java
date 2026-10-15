@@ -86,7 +86,10 @@ public final class OgImageRenderer {
         }
     }
 
-    /** Conteúdo da imagem. Só texto que a Inter cobre; a clientSeed fica fora (pode ser qualquer Unicode). */
+    /**
+     * Conteúdo da imagem. Só texto que a Inter cobre; a clientSeed fica fora (pode ser qualquer Unicode)
+     * e o apelido do jogador passa por {@link #displayable(String)}.
+     */
     public record Card(String expression, String total, String diceLine, String footer, String corner) {
     }
 
@@ -127,6 +130,13 @@ public final class OgImageRenderer {
             throw new UncheckedIOException(e);
         }
         return out.toByteArray();
+    }
+
+    /** O texto sem os caracteres que a Inter não desenha (emoji, por exemplo), sem espaços nas pontas. */
+    public static String displayable(String text) {
+        StringBuilder b = new StringBuilder();
+        text.codePoints().filter(REGULAR::canDisplay).forEach(b::appendCodePoint);
+        return b.toString().strip();
     }
 
     /** Desenha o texto, cortando com reticências se passar da largura. */

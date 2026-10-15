@@ -2,6 +2,7 @@ package io.github.natanmacielc.dice.app.api;
 
 import io.github.natanmacielc.dice.app.ledger.LedgerRepository;
 import io.github.natanmacielc.dice.app.ledger.RollService;
+import io.github.natanmacielc.dice.core.chain.Player;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -23,7 +24,8 @@ public class SessionResource {
     public record CreateSession(String name) {
     }
 
-    public record CreateRoll(String clientSeed, String expression) {
+    /** player: chave, apelido, requestId e assinatura do pedido (spec/ALGORITHM.md, seção 7.2). */
+    public record CreateRoll(String clientSeed, String expression, Player player) {
     }
 
     private final RollService rolls;
@@ -42,7 +44,8 @@ public class SessionResource {
     @Path("/{sessionId}/rolls")
     public Response roll(@PathParam("sessionId") String sessionId, CreateRoll body) {
         LedgerRepository.Requested r = rolls.requestRoll(sessionId,
-                body == null ? null : body.clientSeed(), body == null ? null : body.expression());
+                body == null ? null : body.clientSeed(), body == null ? null : body.expression(),
+                body == null ? null : body.player());
         return Response.created(URI.create("/rolls/" + r.roll().rollId()))
                 .entity(Views.receipt(r.roll(), r.entry(), rolls.displayStatus(r.roll()))).build();
     }

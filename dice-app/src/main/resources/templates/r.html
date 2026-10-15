@@ -60,6 +60,9 @@
   <div class="readout" aria-live="polite">
     <p class="status-pill" id="status" data-status="{page.status}">{page.statusLabel}</p>
     <p class="roll-expression">{page.expression}</p>
+    {#if page.playerName}
+    <p class="roll-player" id="roll-player">por <strong>{page.playerName}</strong> <code class="fingerprint" title="Impressão da chave de quem rolou">{page.playerFingerprint}</code></p>
+    {/if}
     <div class="result" id="result">
       <p class="total" id="total">{page.totalText}</p>
       <p class="breakdown" id="dice">{page.diceText}</p>
@@ -85,6 +88,13 @@
     <summary>Detalhes técnicos</summary>
     <div class="advanced-body">
       <dl class="facts">
+        {#if page.playerName}
+        <dt>Jogador</dt><dd>{page.playerName} <code>{page.playerFingerprint}</code></dd>
+        <dt>Identidade</dt><dd><code>{page.playerIdentityKey}</code></dd>
+        {#if page.playerDeviceKey}
+        <dt>Aparelho vinculado</dt><dd><code>{page.playerDeviceKey}</code></dd>
+        {/if}
+        {/if}
         <dt>Seed</dt><dd><code>{page.clientSeed}</code></dd>
         <dt>Nonce</dt><dd>{page.nonce}</dd>
         <dt>Round alvo</dt><dd>{page.targetRound} <span class="muted">(drand quicknet)</span></dd>

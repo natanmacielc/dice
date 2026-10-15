@@ -80,8 +80,15 @@ public class RollPageResource {
             total = "?";
             dice = "aguardando o round " + r.targetRound();
         }
+        if (r.player() != null) {
+            description = "Rolado por " + r.player().name() + " (" + r.player().fingerprint() + "). " + description;
+        }
         return new RollPage(r.rollId(), r.sessionId(), status, STATUS.getOrDefault(status, status), title, description,
                 base + "/r/" + r.rollId(), image, r.expression(), total, dice, r.clientSeed(), r.nonce(),
-                r.targetRound(), r.requestedAt());
+                r.targetRound(), r.requestedAt(),
+                r.player() == null ? null : r.player().name(),
+                r.player() == null ? null : r.player().fingerprint(),
+                r.player() == null ? null : r.player().identityKey(),
+                r.player() == null || r.player().links().isEmpty() ? null : r.player().publicKey());
     }
 }

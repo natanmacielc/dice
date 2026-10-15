@@ -5,6 +5,8 @@ import io.github.natanmacielc.dice.core.ClientSeed;
 import io.github.natanmacielc.dice.core.DiceExpression;
 import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.chain.ChainEntry;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
+import io.github.natanmacielc.dice.core.chain.Player;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -43,16 +45,37 @@ public class RollService {
         return ledger.createSession(name);
     }
 
-    /** Valida tudo antes de consultar o drand; fixa targetRound = latest + 2 e grava o REQUEST. */
-    public LedgerRepository.Requested requestRoll(String sessionId, String clientSeed, String expression) {
+    /**
+     * Valida tudo antes de consultar o drand: entradas, assinatura do jogador sobre a expressão canônica
+     * e mesa chain-v2. Depois fixa targetRound = latest + 2 e grava o REQUEST.
+     */
+    public LedgerRepository.Requested requestRoll(String sessionId, String clientSeed, String expression,
+                                                  Player player) {
         if (clientSeed == null || expression == null) {
             throw new InvalidRequestException("clientSeed e expression são obrigatórios");
         }
         ClientSeed seed = ClientSeed.of(clientSeed);
         String canonical = DiceExpression.parse(expression).canonical();
-        session(sessionId);
+        if (player == null) {
+            throw new InvalidPlayerException("PLAYER_INVALID", "player é obrigatório");
+        }
+        String problem = player.formatProblem();
+        if (problem != null) {
+            throw new InvalidPlayerException("PLAYER_INVALID", "player: " + problem);
+        }
+        if (!player.linksValid()) {
+            throw new InvalidPlayerException("PLAYER_SIGNATURE_INVALID",
+                    "os vínculos não ligam a identidade à chave deste aparelho");
+        }
+        if (!player.signatureValid(sessionId, seed.value(), canonical)) {
+            throw new InvalidPlayerException("PLAYER_SIGNATURE_INVALID",
+                    "a assinatura não confere com mesa, seed, expressão canônica, identidade, apelido e requestId");
+        }
+        if (session(sessionId).chainFormat() != ChainFormat.CHAIN_V2) {
+            throw new TableReadOnlyException("mesa " + sessionId + " é chain-v1 e não aceita rolls novos");
+        }
         long targetRound = beacon.latest().round() + 2;
-        return ledger.appendRequest(sessionId, seed.value(), canonical, targetRound);
+        return ledger.appendRequest(sessionId, seed.value(), canonical, targetRound, player);
     }
 
     public RollRecord roll(String rollId) {
@@ -65,7 +88,7 @@ public class RollService {
             throw new RollPendingException("roll " + rollId + " ainda pendente (round alvo " + roll.targetRound() + ")");
         }
         List<ChainEntry> entries = ledger.entries(roll.sessionId(), roll.requestSeq(), roll.resultSeq(), Integer.MAX_VALUE);
-        return new Proof(roll, entries);
+        return new Proof(roll, entries, session(roll.sessionId()).chainFormat());
     }
 
     public LogPage log(String sessionId, long after, int limit) {
@@ -106,7 +129,7 @@ public class RollService {
         return ledger.findRoll(rollId).orElseThrow(() -> new NotFoundException("roll " + rollId));
     }
 
-    public record Proof(RollRecord roll, List<ChainEntry> entries) {
+    public record Proof(RollRecord roll, List<ChainEntry> entries, ChainFormat chainFormat) {
     }
 
     public record LogPage(SessionRecord session, List<ChainEntry> entries, Long next) {

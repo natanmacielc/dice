@@ -6,6 +6,7 @@ import io.github.natanmacielc.dice.app.ledger.SessionRecord;
 import io.github.natanmacielc.dice.core.DiceRoller;
 import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.chain.ChainEntry;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
 import io.github.natanmacielc.dice.core.chain.Payloads;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ final class Views {
             m.put("name", s.name());
         }
         m.put("createdAt", s.createdAt());
+        m.put("chainFormat", s.chainFormat().id());
         m.put("links", Map.of("log", "/sessions/" + s.sessionId() + "/log", "rolls", "/sessions/" + s.sessionId() + "/rolls"));
         return m;
     }
@@ -51,12 +53,12 @@ final class Views {
         return m;
     }
 
-    /** Formato da prova: spec/ALGORITHM.md, seção 6.5. */
+    /** Formato da prova: spec/ALGORITHM.md, seções 6.5 e 7.4. */
     static Map<String, Object> proof(RollService.Proof p) {
         RollRecord r = p.roll();
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("algorithm", DiceRoller.ALGORITHM);
-        m.put("chainFormat", "chain-v1");
+        m.put("chainFormat", p.chainFormat().id());
         Map<String, Object> drand = new LinkedHashMap<>();
         drand.put("network", Quicknet.NETWORK);
         drand.put("chainHash", Quicknet.CHAIN_HASH);
@@ -77,6 +79,9 @@ final class Views {
         roll.put("dice", r.dice());
         roll.put("modifier", r.modifier());
         roll.put("total", r.total());
+        if (p.chainFormat() == ChainFormat.CHAIN_V2) {
+            roll.put("player", r.player().toPayload());
+        }
         m.put("roll", roll);
         m.put("entries", entries(p.entries()));
         return m;
@@ -85,6 +90,7 @@ final class Views {
     static Map<String, Object> log(RollService.LogPage page) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("sessionId", page.session().sessionId());
+        m.put("chainFormat", page.session().chainFormat().id());
         m.put("head", Map.of("seq", page.session().headSeq(), "hash", page.session().headHash()));
         m.put("entries", entries(page.entries()));
         m.put("next", page.next());
@@ -106,6 +112,14 @@ final class Views {
         m.put("targetRound", r.targetRound());
         m.put("requestedAt", r.requestedAt());
         m.put("expectedAt", Payloads.formatInstant(Quicknet.timeOf(r.targetRound())));
+        if (r.player() != null) {
+            Map<String, Object> player = new LinkedHashMap<>();
+            player.put("name", r.player().name());
+            player.put("identityKey", r.player().identityKey());
+            player.put("publicKey", r.player().publicKey());
+            player.put("fingerprint", r.player().fingerprint());
+            m.put("player", player);
+        }
         return m;
     }
 

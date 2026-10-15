@@ -2,9 +2,13 @@ package io.github.natanmacielc.dice.app.api;
 
 import io.github.natanmacielc.dice.app.beacon.BeaconUnavailableException;
 import io.github.natanmacielc.dice.app.ledger.ChainContentionException;
+import io.github.natanmacielc.dice.app.ledger.InvalidPlayerException;
 import io.github.natanmacielc.dice.app.ledger.InvalidRequestException;
 import io.github.natanmacielc.dice.app.ledger.NotFoundException;
+import io.github.natanmacielc.dice.app.ledger.RequestReplayException;
 import io.github.natanmacielc.dice.app.ledger.RollPendingException;
+import io.github.natanmacielc.dice.app.ledger.TableReadOnlyException;
+import io.github.natanmacielc.dice.app.pairing.PairingException;
 import io.github.natanmacielc.dice.core.DiceException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
@@ -20,6 +24,26 @@ public class ErrorMappers {
     @ServerExceptionMapper
     public Response invalidRequest(InvalidRequestException e) {
         return error(400, "INVALID_REQUEST", e.getMessage());
+    }
+
+    @ServerExceptionMapper
+    public Response invalidPlayer(InvalidPlayerException e) {
+        return error(400, e.code(), e.getMessage());
+    }
+
+    @ServerExceptionMapper
+    public Response readOnly(TableReadOnlyException e) {
+        return error(409, "TABLE_READ_ONLY", e.getMessage());
+    }
+
+    @ServerExceptionMapper
+    public Response replay(RequestReplayException e) {
+        return error(409, "REQUEST_REPLAY", e.getMessage());
+    }
+
+    @ServerExceptionMapper
+    public Response pairing(PairingException e) {
+        return error(e.status(), e.code(), e.getMessage());
     }
 
     @ServerExceptionMapper

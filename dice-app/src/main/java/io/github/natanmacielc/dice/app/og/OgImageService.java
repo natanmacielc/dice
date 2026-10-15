@@ -43,8 +43,9 @@ public class OgImageService {
             List<ChainEntry> result = ledger.entries(roll.sessionId(), roll.resultSeq(), roll.resultSeq(), 1);
             String corner = result.isEmpty() ? null : "RESULT " + result.get(0).hash().substring(0, 8);
             String dice = roll.dice().stream().map(String::valueOf).collect(Collectors.joining(" · "));
+            String name = roll.player() == null ? "" : OgImageRenderer.displayable(roll.player().name());
             byte[] png = OgImageRenderer.render(new OgImageRenderer.Card(roll.expression(), String.valueOf(roll.total()),
-                    "dados " + dice, "drand quicknet · round " + roll.round() + " · " + host + "/r/" + roll.rollId(),
+                    (name.isEmpty() ? "" : name + " · ") + "dados " + dice, "drand quicknet · round " + roll.round() + " · " + host + "/r/" + roll.rollId(),
                     corner));
             store.putPng(key(roll.rollId()), png);
             ledger.markOgImage(roll.rollId());

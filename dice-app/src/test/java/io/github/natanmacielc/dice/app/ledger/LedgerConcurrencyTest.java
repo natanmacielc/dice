@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.natanmacielc.dice.app.beacon.MutableClock;
 import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.chain.ChainEntry;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
 import io.github.natanmacielc.dice.core.chain.ChainVerification;
 import io.github.natanmacielc.dice.core.chain.ChainVerifier;
 import io.quarkus.test.common.WithTestResource;
@@ -55,10 +56,15 @@ class LedgerConcurrencyTest {
         beacon.reset();
     }
 
+    /** Pedido assinado pela Ana de teste. */
+    private LedgerRepository.Requested request(String sessionId, String seed, String expression) {
+        return rolls.requestRoll(sessionId, seed, expression, TestPlayers.ana(sessionId, seed, expression));
+    }
+
     @Test
     void fiftyParallelRequestsOnOneSessionStayLinear() throws Exception {
         String sessionId = rolls.createSession(null).sessionId();
-        parallel(50, i -> rolls.requestRoll(sessionId, "p" + i, "1d20"));
+        parallel(50, i -> request(sessionId, "p" + i, "1d20"));
 
         List<Map<String, Object>> entries = log(sessionId);
         assertEquals(50, entries.size());
@@ -74,7 +80,7 @@ class LedgerConcurrencyTest {
     @Test
     void twentyParallelReadsResolveExactlyOnce() throws Exception {
         String sessionId = rolls.createSession(null).sessionId();
-        String rollId = rolls.requestRoll(sessionId, "uma-vez", "4d6").roll().rollId();
+        String rollId = request(sessionId, "uma-vez", "4d6").roll().rollId();
         clock.set(Quicknet.timeOf(LATEST + 2));
 
         List<Object> dice = parallel(20, i -> rolls.roll(rollId).dice());
@@ -88,12 +94,12 @@ class LedgerConcurrencyTest {
     @Test
     void mixedRequestsAndResolutionsKeepTheChainLinear() throws Exception {
         String sessionId = rolls.createSession(null).sessionId();
-        List<String> pending = parallel(25, i -> rolls.requestRoll(sessionId, "a" + i, "2d10").roll().rollId());
+        List<String> pending = parallel(25, i -> request(sessionId, "a" + i, "2d10").roll().rollId());
         clock.set(Quicknet.timeOf(LATEST + 2));
 
         parallel(50, i -> i % 2 == 0
                 ? rolls.roll(pending.get(i / 2)).status()
-                : rolls.requestRoll(sessionId, "b" + i, "1d100").roll().status());
+                : request(sessionId, "b" + i, "1d100").roll().status());
 
         // 25 REQUEST iniciais + 25 pares ROUND/RESULT + 25 REQUEST novos.
         List<Map<String, Object>> entries = log(sessionId);
@@ -108,7 +114,7 @@ class LedgerConcurrencyTest {
     }
 
     private static void assertChainValid(List<Map<String, Object>> entries) {
-        ChainVerification v = ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH);
+        ChainVerification v = ChainVerifier.verifySegmentJson(entries, ChainEntry.GENESIS_PREV_HASH, ChainFormat.CHAIN_V2);
         assertTrue(v.valid(), v.code() + ": " + v.message());
     }
 

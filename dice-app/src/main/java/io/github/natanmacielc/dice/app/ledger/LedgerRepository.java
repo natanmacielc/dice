@@ -8,8 +8,10 @@ import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.RollResult;
 import io.github.natanmacielc.dice.core.chain.CanonicalJson;
 import io.github.natanmacielc.dice.core.chain.ChainEntry;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
 import io.github.natanmacielc.dice.core.chain.EntryType;
 import io.github.natanmacielc.dice.core.chain.Payloads;
+import io.github.natanmacielc.dice.core.chain.Player;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Clock;
 import java.time.Instant;
@@ -60,6 +62,7 @@ public class LedgerRepository {
 
     // ---------- Mesas ----------
 
+    /** Mesa nova, sempre chain-v2. */
     public SessionRecord createSession(String name) {
         String sessionId = Ids.newId();
         String createdAt = Payloads.formatInstant(clock.instant());
@@ -72,8 +75,9 @@ public class LedgerRepository {
         item.put("headSeq", n(0));
         item.put("headHash", s(ChainEntry.GENESIS_PREV_HASH));
         item.put("nextNonce", n(1));
+        item.put("chainFormat", s(ChainFormat.CHAIN_V2.id()));
         dynamo.putItem(r -> r.tableName(table).item(item).conditionExpression("attribute_not_exists(PK)"));
-        return new SessionRecord(sessionId, name, createdAt, 0, ChainEntry.GENESIS_PREV_HASH, 1);
+        return new SessionRecord(sessionId, name, createdAt, 0, ChainEntry.GENESIS_PREV_HASH, 1, ChainFormat.CHAIN_V2);
     }
 
     public Optional<SessionRecord> findSession(String sessionId) {
@@ -82,8 +86,10 @@ public class LedgerRepository {
         if (item == null || item.isEmpty()) {
             return Optional.empty();
         }
+        ChainFormat format = item.containsKey("chainFormat")
+                ? ChainFormat.fromId(str(item, "chainFormat")) : ChainFormat.CHAIN_V1;
         return Optional.of(new SessionRecord(str(item, "sessionId"), item.containsKey("name") ? str(item, "name") : null,
-                str(item, "createdAt"), num(item, "headSeq"), str(item, "headHash"), num(item, "nextNonce")));
+                str(item, "createdAt"), num(item, "headSeq"), str(item, "headHash"), num(item, "nextNonce"), format));
     }
 
     // ---------- Rolls ----------
@@ -105,15 +111,18 @@ public class LedgerRepository {
                 resolved ? item.get("dice").l().stream().map(v -> Integer.parseInt(v.n())).toList() : null,
                 resolved ? (int) num(item, "modifier") : null,
                 resolved ? (int) num(item, "total") : null,
-                item.containsKey("ogImage") && Boolean.TRUE.equals(item.get("ogImage").bool())));
+                item.containsKey("ogImage") && Boolean.TRUE.equals(item.get("ogImage").bool()),
+                item.containsKey("player") ? toPlayer(item.get("player").m()) : null));
     }
 
     /**
-     * Grava o REQUEST. O nonce sai do nextNonce da mesa, na mesma transação. requestedAt é o relógio
-     * de cada tentativa; se o round alvo já tiver sido publicado, desiste (o pedido não pode ser
-     * gravado depois de o resultado existir).
+     * Grava o REQUEST assinado (chain-v2). O nonce sai do nextNonce da mesa, na mesma transação, e o
+     * marcador REQ#{requestId} impede reaproveitar o pedido. requestedAt é o relógio de cada tentativa;
+     * se o round alvo já tiver sido publicado, desiste (o pedido não pode ser gravado depois de o
+     * resultado existir).
      */
-    public Requested appendRequest(String sessionId, String clientSeed, String expression, long targetRound) {
+    public Requested appendRequest(String sessionId, String clientSeed, String expression, long targetRound,
+                                   Player player) {
         String rollId = Ids.newId();
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             Instant now = clock.instant();
@@ -126,7 +135,7 @@ public class LedgerRepository {
             long nonce = session.nextNonce();
             String requestedAt = Payloads.formatInstant(now);
             ChainEntry entry = ChainEntry.create(seq, EntryType.REQUEST, session.headHash(),
-                    Payloads.request(seq, sessionId, rollId, clientSeed, expression, nonce, targetRound, now));
+                    Payloads.request(seq, sessionId, rollId, clientSeed, expression, nonce, targetRound, now, player));
 
             Map<String, AttributeValue> roll = new HashMap<>(key(rollPk(rollId), META));
             roll.put("rollId", s(rollId));
@@ -138,18 +147,35 @@ public class LedgerRepository {
             roll.put("requestedAt", s(requestedAt));
             roll.put("requestSeq", n(seq));
             roll.put("status", s(RollRecord.PENDING));
+            roll.put("player", AttributeValue.fromM(Map.of(
+                    "publicKey", s(player.publicKey()),
+                    "name", s(player.name()),
+                    "requestId", s(player.requestId()),
+                    "signature", s(player.signature()),
+                    "identityKey", s(player.identityKey()),
+                    "links", AttributeValue.fromL(player.links().stream()
+                            .map(l -> AttributeValue.fromM(Map.of("deviceKey", s(l.deviceKey()), "signature", s(l.signature()))))
+                            .toList()))));
             Map<String, AttributeValue> pending = new HashMap<>(key(sessionPk(sessionId), "PENDING#" + rollId));
             pending.put("rollId", s(rollId));
             pending.put("targetRound", n(targetRound));
+            Map<String, AttributeValue> requestMarker = new HashMap<>(key(sessionPk(sessionId), requestSk(player)));
+            requestMarker.put("rollId", s(rollId));
 
             List<TransactWriteItem> items = List.of(
                     advanceHead(sessionId, session.headSeq(), seq, entry.hash(), nonce + 1),
                     putEntry(sessionId, entry),
                     put(roll),
-                    put(pending));
-            if (transact(items, "pedido na mesa " + sessionId, attempt) == Outcome.DONE) {
+                    put(pending),
+                    put(requestMarker));
+            Outcome outcome = transact(items, "pedido na mesa " + sessionId, attempt);
+            if (outcome == Outcome.DONE) {
                 return new Requested(new RollRecord(rollId, sessionId, nonce, clientSeed, expression, targetRound,
-                        requestedAt, seq, RollRecord.PENDING, null, null, null, null, null, null, null, false), entry);
+                        requestedAt, seq, RollRecord.PENDING, null, null, null, null, null, null, null, false, player),
+                        entry);
+            }
+            if (outcome == Outcome.REQUEST_REPLAYED) {
+                throw new RequestReplayException("requestId " + player.requestId() + " já usado nesta mesa");
             }
         }
         throw new ChainContentionException("mesa " + sessionId + " ocupada; tente de novo");
@@ -277,7 +303,7 @@ public class LedgerRepository {
 
     // ---------- Internos ----------
 
-    private enum Outcome { DONE, RETRY, ROLL_ALREADY_RESOLVED }
+    private enum Outcome { DONE, RETRY, ROLL_ALREADY_RESOLVED, REQUEST_REPLAYED }
 
     private Outcome transact(List<TransactWriteItem> items, String what, int attempt) {
         try {
@@ -286,8 +312,14 @@ public class LedgerRepository {
         } catch (TransactionCanceledException e) {
             List<CancellationReason> reasons = e.hasCancellationReasons() ? e.cancellationReasons() : List.of();
             // Índice 3 da resolução = condição status = PENDING do roll.
-            if (items.size() == 5 && reasons.size() == 5 && "ConditionalCheckFailed".equals(reasons.get(3).code())) {
+            if (items.size() == 5 && reasons.size() == 5 && "ConditionalCheckFailed".equals(reasons.get(3).code())
+                    && items.get(3).update() != null) {
                 return Outcome.ROLL_ALREADY_RESOLVED;
+            }
+            // Índice 4 do pedido = marcador REQ#{requestId}: o pedido assinado já foi gravado.
+            if (items.size() == 5 && reasons.size() == 5 && "ConditionalCheckFailed".equals(reasons.get(4).code())
+                    && items.get(4).put() != null) {
+                return Outcome.REQUEST_REPLAYED;
             }
             LOG.debugf("%s: tentativa %d cancelada (%s)", what, attempt, reasons.stream().map(CancellationReason::code).toList());
             backoff(attempt);
@@ -360,6 +392,18 @@ public class LedgerRepository {
 
     static String rollPk(String rollId) {
         return "ROLL#" + rollId;
+    }
+
+    static String requestSk(Player player) {
+        return "REQ#" + player.requestId();
+    }
+
+    private static Player toPlayer(Map<String, AttributeValue> m) {
+        List<Player.Link> links = m.get("links").l().stream()
+                .map(l -> new Player.Link(l.m().get("deviceKey").s(), l.m().get("signature").s()))
+                .toList();
+        return new Player(m.get("publicKey").s(), m.get("name").s(), m.get("requestId").s(), m.get("signature").s(),
+                m.get("identityKey").s(), links);
     }
 
     static String entrySk(long seq) {
