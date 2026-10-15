@@ -28,6 +28,7 @@ public record Player(String publicKey, String name, String requestId, String sig
 
     public static final String CONTEXT = "dice-player-v1";
     public static final String LINK_CONTEXT = "dice-device-v1";
+    public static final String TABLES_CONTEXT = "dice-tables-v1";
     public static final int MAX_NAME_BYTES = 32;
     public static final int MAX_LINKS = 8;
 
@@ -132,6 +133,25 @@ public record Player(String publicKey, String name, String requestId, String sig
         return CanonicalJson.write(m).getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Pedido assinado da lista de mesas do jogador (seção 7.8, informativa): utf8(canonical({action, at,
+     * context, cursor?, identityKey, sessionId?})). Campos nulos ficam de fora.
+     */
+    public static byte[] tablesMessage(String action, String identityKey, String at, String sessionId, String cursor) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("context", TABLES_CONTEXT);
+        m.put("action", action);
+        m.put("identityKey", identityKey);
+        m.put("at", at);
+        if (sessionId != null) {
+            m.put("sessionId", sessionId);
+        }
+        if (cursor != null) {
+            m.put("cursor", cursor);
+        }
+        return CanonicalJson.write(m).getBytes(StandardCharsets.UTF_8);
+    }
+
     /** A cadeia de vínculos liga identityKey a publicKey? Supõe formatProblem() == null. */
     public boolean linksValid() {
         return linksValid(identityKey, links, publicKey);
@@ -195,7 +215,8 @@ public record Player(String publicKey, String name, String requestId, String sig
         return new Link(deviceKey, signRaw(issuerPrivateKeyHex, linkMessage(identityKey, deviceKey)));
     }
 
-    static String signRaw(String privateKeyHex, byte[] message) {
+    /** Assinatura Ed25519 crua (testes e ferramentas). */
+    public static String signRaw(String privateKeyHex, byte[] message) {
         try {
             PrivateKey key = KeyFactory.getInstance("Ed25519").generatePrivate(
                     new EdECPrivateKeySpec(NamedParameterSpec.ED25519, HexFormat.of().parseHex(privateKeyHex)));

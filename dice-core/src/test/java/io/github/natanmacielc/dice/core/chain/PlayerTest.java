@@ -42,6 +42,16 @@ class PlayerTest {
     }
 
     @Test
+    void tablesMessageOmitsAbsentFields() {
+        assertEquals("{\"action\":\"list\",\"at\":\"2026-10-15T12:00:00.000Z\",\"context\":\"dice-tables-v1\","
+                + "\"identityKey\":\"" + PK1 + "\"}",
+                new String(Player.tablesMessage("list", PK1, "2026-10-15T12:00:00.000Z", null, null), StandardCharsets.UTF_8));
+        assertEquals("{\"action\":\"add\",\"at\":\"t\",\"context\":\"dice-tables-v1\",\"cursor\":\"c\","
+                + "\"identityKey\":\"" + PK1 + "\",\"sessionId\":\"s\"}",
+                new String(Player.tablesMessage("add", PK1, "t", "s", "c"), StandardCharsets.UTF_8));
+    }
+
+    @Test
     void signedPlayerVerifiesAndAnyChangeBreaksIt() {
         Player p = Player.sign(SK1, PK1, "sess", "seed", "1d20", "Ana", REQ);
         assertNull(p.formatProblem());
