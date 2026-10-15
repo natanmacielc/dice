@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   buildExpression, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
-  parseRollInput, relativeTime, runChecks, secondsUntil, shellQuote, summarizeLog,
+  parseRollInput, relativeTime, requestRoll, runChecks, secondsUntil, shellQuote, summarizeLog,
 } from './page-logic.js';
 import { timeOf, verifyProof } from './verifier/chain-v1.js';
 import { roll } from './verifier/dice-v1.js';
@@ -124,3 +124,25 @@ for (const v of vectors.rollVectors) {
     for (const w of e.words) assert.equal(parseInt(w.hex, 16), w.value);
   });
 }
+
+test('mesa salva que não existe mais: cria outra e repete o roll (regressão do 404)', async () => {
+  const notFound = Object.assign(new Error('Mesa ou rolagem não encontrada.'), { status: 404 });
+  const calls = [];
+  const createTable = async () => { calls.push('create'); return 'mesa-nova'; };
+  const postRoll = async (id) => {
+    calls.push(`roll:${id}`);
+    if (id === 'mesa-velha') throw notFound;
+    return { rollId: 'r1' };
+  };
+  assert.deepEqual(await requestRoll({ sessionId: 'mesa-velha', createTable, postRoll }),
+    { receipt: { rollId: 'r1' }, sessionId: 'mesa-nova', recreated: true });
+  assert.deepEqual(calls, ['roll:mesa-velha', 'create', 'roll:mesa-nova']);
+
+  calls.length = 0;
+  assert.deepEqual(await requestRoll({ sessionId: null, createTable, postRoll }),
+    { receipt: { rollId: 'r1' }, sessionId: 'mesa-nova', recreated: false });
+  assert.deepEqual(calls, ['create', 'roll:mesa-nova']);
+
+  const busy = Object.assign(new Error('Mesa ocupada. Tente de novo.'), { status: 409 });
+  await assert.rejects(requestRoll({ sessionId: 'x', createTable, postRoll: async () => { throw busy; } }), /Mesa ocupada/);
+});

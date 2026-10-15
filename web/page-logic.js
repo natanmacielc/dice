@@ -131,6 +131,24 @@ export function parseRollInput(text) {
   return ROLL_PATH.exec(t)?.[1] ?? null;
 }
 
+/**
+ * Pede o roll na mesa salva. Se ela não existe mais (404, ex.: DynamoDB Local zerado),
+ * cria outra e tenta de novo uma vez. Devolve { receipt, sessionId, recreated }.
+ */
+export async function requestRoll({ sessionId, createTable, postRoll }) {
+  if (!sessionId) {
+    const created = await createTable();
+    return { receipt: await postRoll(created), sessionId: created, recreated: false };
+  }
+  try {
+    return { receipt: await postRoll(sessionId), sessionId, recreated: false };
+  } catch (e) {
+    if (e.status !== 404) throw e;
+    const created = await createTable();
+    return { receipt: await postRoll(created), sessionId: created, recreated: true };
+  }
+}
+
 /** Pendente há mais de 60 s depois do round alvo: só exibição, não é estado gravado. */
 const EXPIRED_AFTER_MS = 60_000;
 

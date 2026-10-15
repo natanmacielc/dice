@@ -1,7 +1,7 @@
 // Página inicial: escolhe o dado, rola, anima e confere no navegador.
 import { fetchLog, getJson, postJson, verifyRoll, verifyTable } from './api.js';
 import {
-  buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, relativeTime,
+  buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, relativeTime, requestRoll,
 } from './page-logic.js';
 import { parseExpression } from './verifier/dice-v1.js';
 import {
@@ -14,6 +14,7 @@ const SESSION_NAME_KEY = 'dice.sessionName';
 const ID_FORMAT = /^[0-9a-hjkmnp-tv-z]{16}$/;
 const POLL_MS = 1000;
 const GIVE_UP_MS = 90_000;
+const MISSING_TABLE = 'A mesa salva neste navegador não existe mais. Uma nova é criada na próxima rolagem.';
 
 const state = { sides: 20, count: 1, modifier: 0, rolling: false, seedCustom: false, rollId: null };
 const tray = new Tray($('tray'), state.sides, state.count);
@@ -78,7 +79,18 @@ $('table-new').addEventListener('submit', async (event) => {
   }
 });
 
-$('table-join').addEventListener('submit', (event) => {
+/** Confere no servidor que a mesa existe antes de adotá-la. */
+async function tableExists(id) {
+  try {
+    await getJson(`/sessions/${encodeURIComponent(id)}/log?limit=1`);
+    return true;
+  } catch (e) {
+    if (e.status === 404) return false;
+    throw e;
+  }
+}
+
+$('table-join').addEventListener('submit', async (event) => {
   event.preventDefault();
   const input = event.target.elements.sessionId;
   const id = input.value.trim().toLowerCase();
@@ -87,6 +99,15 @@ $('table-join').addEventListener('submit', (event) => {
     return;
   }
   $('table-error').textContent = '';
+  try {
+    if (!(await tableExists(id))) {
+      $('table-error').textContent = 'Não existe mesa com esse ID.';
+      return;
+    }
+  } catch (e) {
+    $('table-error').textContent = e.message;
+    return;
+  }
   input.value = '';
   setTable(id);
   toast('Você entrou na mesa');
@@ -96,15 +117,18 @@ $('table-id-copy').addEventListener('click', () => copyText(sessionId));
 $('table-invite').addEventListener('click', () => shareLink(`${location.origin}/?mesa=${sessionId}`, 'Entre na minha mesa'));
 
 /** Convite: /?mesa={id} adota a mesa e limpa a URL. */
-function adoptInvite() {
+async function adoptInvite() {
   const params = new URLSearchParams(location.search);
   const id = params.get('mesa')?.trim().toLowerCase();
   if (!id) return;
   params.delete('mesa');
   history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
-  if (ID_FORMAT.test(id) && id !== sessionId) {
+  if (!ID_FORMAT.test(id) || id === sessionId) return;
+  if (await tableExists(id).catch(() => true)) {
     setTable(id);
     toast('Você entrou na mesa do convite');
+  } else {
+    toast('A mesa do convite não existe mais.');
   }
 }
 
@@ -302,8 +326,12 @@ async function roll() {
   stageRing.mode('waiting');
   tray.tumble();
   try {
-    const table = sessionId ?? (await createTable(null));
-    const receipt = await postJson(`/sessions/${encodeURIComponent(table)}/rolls`, { clientSeed, expression: expr });
+    const { receipt, recreated } = await requestRoll({
+      sessionId,
+      createTable: () => createTable(null),
+      postRoll: (table) => postJson(`/sessions/${encodeURIComponent(table)}/rolls`, { clientSeed, expression: expr }),
+    });
+    if (recreated) toast('A mesa salva neste navegador não existia mais. Criei uma nova.');
     bumpHistory();
     const result = await waitForResult(receipt);
     await reveal(result);
@@ -354,10 +382,17 @@ async function refreshHistory() {
     renderHistory();
     return;
   }
+  const id = sessionId;
   try {
-    historyItems = historyFromLog(await fetchLog(sessionId));
-  } catch {
+    historyItems = historyFromLog(await fetchLog(id));
+  } catch (e) {
     historyItems = [];
+    if (e.status === 404 && id === sessionId) {
+      // A mesa salva sumiu (ex.: DynamoDB Local zerado): esquece e a próxima rolagem cria outra.
+      setTable(null);
+      toast(MISSING_TABLE);
+      return;
+    }
   }
   renderHistoryCount(historyItems.length);
   if ($('history-dialog').open) renderHistory();
