@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0616">
+  <title>Por que confiar? · Dado Verificável</title>
+  <meta name="description" content="Por que ninguém, nem o servidor, consegue escolher ou prever o resultado, e como você mesmo confere qualquer rolagem.">
+  <link rel="preload" href="/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/confianca.js"></script>
+</head>
+<body class="page-trust">
+<svg class="svg-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="die-shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".38"/>
+      <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Dado Verificável, início">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Dado <em>Verificável</em></span>
+  </a>
+  <nav class="topbar-actions">
+    <a class="chip" href="/"><span class="chip-dot" aria-hidden="true"></span>Rolar dados</a>
+  </nav>
+</header>
+
+<main class="trust">
+  <section class="hero">
+    <p class="eyebrow">Por que confiar?</p>
+    <h1>Ninguém escolhe o resultado. <span class="glow">Nem nós.</span></h1>
+    <p class="lead">Cada rolagem usa um número sorteado em público, por uma rede independente, <strong>segundos depois</strong> do seu pedido. Quando você clica em Rolar, esse número ainda não existe. Depois que ele sai, qualquer pessoa refaz a conta e chega no mesmo dado.</p>
+    <a class="primary-btn" href="#confira">Conferir uma rolagem</a>
+  </section>
+
+  <section class="steps" aria-label="Como funciona">
+    <article class="how-step reveal">
+      <svg class="step-art art-request" viewBox="0 0 160 120" aria-hidden="true">
+        <path class="art-die" d="M50 22l26 15v30L50 82 24 67V37z"/>
+        <path class="art-die-facets" d="M50 22v30M24 37l26 15 26-15"/>
+        <path class="art-arrow" d="M86 52h26M104 44l8 8-8 8"/>
+        <circle class="art-clock" cx="134" cy="52" r="18"/>
+        <path class="art-hand" d="M134 52V40"/>
+        <path class="art-hand-short" d="M134 52h8"/>
+      </svg>
+      <span class="step-num">1</span>
+      <h2>Você pede</h2>
+      <p>Você escolhe o dado. O pedido entra num registro público e fica preso a um sorteio do <strong>futuro</strong>: o próximo número que o drand vai publicar, daqui a uns 3 a 6 segundos.</p>
+    </article>
+    <article class="how-step reveal">
+      <svg class="step-art art-drand" viewBox="0 0 160 120" aria-hidden="true">
+        <path class="art-links" d="M40 30L80 60L120 30M40 90L80 60L120 90M40 30L40 90M120 30L120 90"/>
+        <circle class="art-node" cx="40" cy="30" r="8"/>
+        <circle class="art-node" cx="120" cy="30" r="8"/>
+        <circle class="art-node" cx="40" cy="90" r="8"/>
+        <circle class="art-node" cx="120" cy="90" r="8"/>
+        <circle class="art-pulse" cx="80" cy="60" r="12"/>
+        <circle class="art-core" cx="80" cy="60" r="12"/>
+      </svg>
+      <span class="step-num">2</span>
+      <h2>O mundo sorteia</h2>
+      <p>O <a href="https://drand.love" target="_blank" rel="noopener">drand</a> é uma rede de organizações independentes (a League of Entropy, com Cloudflare, Protocol Labs, universidades e outras) que publica um número aleatório assinado a cada 3 segundos. Nenhuma delas sozinha consegue saber o próximo. Nós também não.</p>
+    </article>
+    <article class="how-step reveal">
+      <svg class="step-art art-math" viewBox="0 0 160 120" aria-hidden="true">
+        <rect class="art-chip art-chip-a" x="8" y="22" width="52" height="18" rx="9"/>
+        <rect class="art-chip art-chip-b" x="8" y="51" width="52" height="18" rx="9"/>
+        <rect class="art-chip art-chip-c" x="8" y="80" width="52" height="18" rx="9"/>
+        <path class="art-funnel" d="M64 31L88 60L64 89M64 60h24"/>
+        <rect class="art-hash" x="88" y="46" width="28" height="28" rx="6"/>
+        <path class="art-arrow" d="M118 60h10"/>
+        <path class="art-die art-die-out" d="M144 40l14 8v16l-14 8-14-8V48z"/>
+      </svg>
+      <span class="step-num">3</span>
+      <h2>A conta é pública</h2>
+      <p>O dado sai de uma conta simples e conhecida (SHA-256) sobre o número do drand, a sua seed e o número do pedido. Mesmos ingredientes, mesmo resultado, em qualquer computador. Seu navegador já refaz essa conta sozinho a cada rolagem.</p>
+    </article>
+  </section>
+
+  <section class="cant reveal">
+    <h2>O que nós não conseguimos fazer</h2>
+    <ul class="cant-grid">
+      <li><strong>Prever o resultado</strong><span>O número do drand não existe quando o pedido é gravado.</span></li>
+      <li><strong>Escolher o resultado</strong><span>A conta é fixa e pública. Trocar um dado quebraria a conferência.</span></li>
+      <li><strong>Rolar de novo escondido</strong><span>Cada pedido ganha um número em sequência no registro. Pular um aparece.</span></li>
+      <li><strong>Apagar uma rolagem ruim</strong><span>O registro é uma cadeia: cada entrada carrega o hash da anterior. Tirar uma quebra todas as seguintes.</span></li>
+    </ul>
+  </section>
+
+  <section class="tool" id="confira">
+    <h2>Confira você mesmo</h2>
+    <p class="muted">Cole o link de uma rolagem (ou só o código). Seu navegador baixa a prova, busca o número direto no drand, confere a assinatura e refaz a conta. Nada disso depende de confiar no nosso servidor.</p>
+    <form class="tool-form" id="check-form">
+      <input id="check-input" autocomplete="off" spellcheck="false" placeholder="https://…/r/abc123… ou o código de 16 letras" aria-label="Link ou código da rolagem">
+      <button type="submit" class="primary-btn">Conferir</button>
+    </form>
+    <button type="button" class="text-link link-btn" id="use-last" hidden>Usar minha última rolagem</button>
+    <p class="error" id="check-error" role="alert"></p>
+
+    <div class="tool-out" id="check-out" hidden>
+      <div class="summary" id="summary"></div>
+      <h3 class="verdict-title" id="verdict-title"></h3>
+      <ul class="checks" id="checks"></ul>
+
+      <details class="panel" id="math-panel">
+        <summary>Refaça a conta passo a passo</summary>
+        <div class="math" id="math"></div>
+      </details>
+
+      <details class="panel">
+        <summary>Use o verificador independente em Python</summary>
+        <div class="panel-body">
+          <p class="muted">Um programa separado, escrito em outra linguagem, que não usa nada do site. Rode no seu computador:</p>
+          <div id="python-cmds"></div>
+        </div>
+      </details>
+    </div>
+
+    <details class="panel manual">
+      <summary>Modo manual: sem o nosso servidor</summary>
+      <div class="panel-body">
+        <p class="muted">Pegue o número (randomness) direto no drand, por exemplo em <code id="drand-example"></code>, e preencha com a seed, o nonce e a expressão da rolagem.</p>
+        <form id="manual-form" class="manual-grid">
+          <label class="field"><span class="field-label">Randomness do round</span><input name="randomness" required pattern="[0-9a-f]{64}" maxlength="64" autocomplete="off" spellcheck="false" placeholder="64 caracteres hex"></label>
+          <label class="field"><span class="field-label">Seed</span><input name="clientSeed" required maxlength="64" autocomplete="off" spellcheck="false"></label>
+          <label class="field"><span class="field-label">Nonce</span><input name="nonce" required inputmode="numeric" pattern="[0-9]+" autocomplete="off"></label>
+          <label class="field"><span class="field-label">Expressão</span><input name="expression" required maxlength="16" autocomplete="off" spellcheck="false" placeholder="2d6+3"></label>
+          <button type="submit" class="ghost-btn wide">Calcular</button>
+        </form>
+        <p class="error" id="manual-error" role="alert"></p>
+        <div class="math" id="manual-math"></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="faq reveal">
+    <h2>Perguntas</h2>
+    <details>
+      <summary>E se o servidor mentir sobre o resultado?</summary>
+      <p>Seu navegador não acredita no servidor: ele busca o número direto no drand, confere a assinatura criptográfica do drand e refaz a conta. Se o servidor inventasse qualquer coisa, a conferência ficaria vermelha.</p>
+    </details>
+    <details>
+      <summary>E se o servidor esperar o número sair e só depois gravar o pedido?</summary>
+      <p>O pedido guarda o horário e o round alvo, que é sempre um round futuro. A conferência compara o horário do pedido com o horário em que o round foi publicado: o pedido tem de vir antes. E o round alvo é sempre dois à frente do mais recente: o servidor não escolhe um round a dedo.</p>
+    </details>
+    <details>
+      <summary>E se o drand for comprometido?</summary>
+      <p>O número só existe quando um mínimo de membros independentes da rede assina junto. Para prever o resultado, seria preciso corromper ao mesmo tempo várias organizações em países diferentes. Por isso o drand é usado por outros projetos para sorteios públicos.</p>
+    </details>
+    <details>
+      <summary>Para que serve a seed?</summary>
+      <p>É um texto seu que entra na conta. Você escolhe antes de rolar (o site sorteia uma por você, mas dá para trocar em Opções avançadas). Assim, duas rolagens no mesmo round dão resultados diferentes, e a sua rolagem é só sua.</p>
+    </details>
+    <details>
+      <summary>O que é o nonce?</summary>
+      <p>O número do pedido dentro da mesa: 1, 2, 3… Ele entra na conta e impede que o mesmo pedido seja reaproveitado. Como é sequencial, um pedido sumido deixaria um buraco visível.</p>
+    </details>
+    <details>
+      <summary>Dá para esconder uma rolagem ruim?</summary>
+      <p>Não. O registro da mesa é público e mostra até os pedidos que ainda esperam o drand. Em "Verificar a mesa inteira", no histórico, seu navegador confere cada elo da cadeia desde a primeira rolagem.</p>
+    </details>
+  </section>
+
+  <footer class="trust-foot">
+    <a class="text-link" href="https://github.com/natanmacielc/dices/blob/main/spec/ALGORITHM.md" target="_blank" rel="noopener">Especificação do algoritmo</a>
+    <a class="text-link" href="https://github.com/natanmacielc/dices" target="_blank" rel="noopener">Código-fonte</a>
+  </footer>
+</main>
+</body>
+</html>
