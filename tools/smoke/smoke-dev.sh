@@ -25,9 +25,14 @@ roll="$(json "['rollId']" <<<"$receipt")"
 echo "roll $roll (round alvo $(json "['targetRound']" <<<"$receipt"), jogador $(json "['player']['name']" <<<"$receipt"))"
 
 echo "== aparelho vinculado (pareamento pela API) rola como a mesma identidade"
-linked="$(python3 "$ROOT/tools/smoke/pair_device.py" "$BASE" "$session" "smoke-linked-${GITHUB_RUN_ID:-local}" 1d20 smoke)"
+keys="$(mktemp)"
+trap 'rm -f "$keys"' EXIT
+linked="$(python3 "$ROOT/tools/smoke/pair_device.py" "$BASE" "$session" "smoke-linked-${GITHUB_RUN_ID:-local}" 1d20 smoke "$keys")"
 linked_receipt="$(curl -fsS -X POST "$BASE/sessions/$session/rolls" -H 'content-type: application/json' -d "$linked")"
 python3 -c "import json,sys; p=json.load(sys.stdin)['player']; assert p['identityKey'] != p['publicKey'], p; print('aparelho', p['publicKey'][:8], 'como', p['fingerprint'])" <<<"$linked_receipt"
+
+echo "== lista de mesas (pedido assinado pelo aparelho vinculado)"
+python3 "$ROOT/tools/smoke/my_tables.py" "$BASE" "$keys" | grep -qx "$session" || { echo "mesa $session fora da lista"; exit 1; }
 
 echo "== resolução"
 for _ in $(seq 1 15); do

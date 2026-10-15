@@ -3,7 +3,9 @@
 Dois aparelhos efêmeros: A (a identidade) e B. Faz as quatro etapas do pareamento contra BASE, com os
 MACs de verdade, e devolve o POST de roll de B, que rola como a identidade de A.
 
-Uso: python3 tools/smoke/pair_device.py BASE SESSION_ID SEED EXPRESSAO_CANONICA APELIDO
+Uso: python3 tools/smoke/pair_device.py BASE SESSION_ID SEED EXPRESSAO_CANONICA APELIDO [ARQUIVO_CHAVES]
+
+Com ARQUIVO_CHAVES, grava a chave de B (efêmera, só para o smoke) para tools/smoke/my_tables.py.
 """
 
 from __future__ import annotations
@@ -40,7 +42,7 @@ def mac(secret: bytes, text: str) -> str:
 
 
 def main(argv: list[str]) -> int:
-    base, session_id, seed, expression, name = argv
+    base, session_id, seed, expression, name = argv[:5]
     a, b = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()
     identity, device = public_hex(a), public_hex(b)
     secret = secrets.token_bytes(16)
@@ -67,6 +69,12 @@ def main(argv: list[str]) -> int:
     signature = b.sign(player_message(session_id, seed, expression, got["identityKey"], name, request_id))
     player = {"publicKey": device, "name": name, "requestId": request_id, "signature": signature.hex(),
               "identityKey": got["identityKey"], "links": got["links"]}
+    if len(argv) > 5:
+        from cryptography.hazmat.primitives.serialization import NoEncryption, PrivateFormat
+
+        sk = b.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption()).hex()
+        Path(argv[5]).write_text(json.dumps({"sk": sk, "publicKey": device, "identityKey": got["identityKey"],
+                                             "links": got["links"]}), encoding="utf-8")
     print(json.dumps({"clientSeed": seed, "expression": expression, "player": player}, ensure_ascii=False))
     return 0
 
