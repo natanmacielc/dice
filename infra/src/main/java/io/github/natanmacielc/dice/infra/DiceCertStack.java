@@ -21,10 +21,11 @@ import software.constructs.Construct;
  */
 public class DiceCertStack extends Stack {
 
-    /** Limite por IP em 5 minutos, em qualquer caminho (páginas, scripts, API). */
+    /**
+     * Limite por IP em 5 minutos, em qualquer caminho (páginas, scripts, API). Não há limite só para /api/*:
+     * filtrar por caminho exige byte match, que o plano Free não aceita. O custo da API fica com o kill switch.
+     */
     static final int RATE_LIMIT_ALL = 1000;
-    /** Limite por IP em 5 minutos na API, que é o que custa (uma rolagem gasta ~8 pedidos). */
-    static final int RATE_LIMIT_API = 300;
     static final int RATE_WINDOW_SECONDS = 300;
     /** Orçamento mensal em dólares; o esperado é zero. */
     static final int BUDGET_USD = 1;
@@ -59,24 +60,15 @@ public class DiceCertStack extends Stack {
     }
 
     /**
-     * Três das cinco regras do plano Free do CloudFront. Pedido bloqueado não conta na franquia do plano;
+     * Duas das cinco regras do plano Free do CloudFront. Pedido bloqueado não conta na franquia do plano;
      * o bloqueio responde 403 sem JSON (a web mostra "espere alguns minutos").
      */
     private CfnWebACL webAcl() {
         List<CfnWebACL.RuleProperty> rules = new ArrayList<>();
-        rules.add(rateRule("rate-per-ip", 0, RATE_LIMIT_ALL, null));
-        rules.add(rateRule("api-rate-per-ip", 1, RATE_LIMIT_API, CfnWebACL.StatementProperty.builder()
-                .byteMatchStatement(CfnWebACL.ByteMatchStatementProperty.builder()
-                        .fieldToMatch(CfnWebACL.FieldToMatchProperty.builder().uriPath(Map.of()).build())
-                        .positionalConstraint("STARTS_WITH")
-                        .searchString("/api/")
-                        .textTransformations(List.of(CfnWebACL.TextTransformationProperty.builder()
-                                .priority(0).type("NONE").build()))
-                        .build())
-                .build()));
+        rules.add(rateRule("rate-per-ip", 0, RATE_LIMIT_ALL));
         rules.add(CfnWebACL.RuleProperty.builder()
                 .name("ip-reputation")
-                .priority(2)
+                .priority(1)
                 .statement(CfnWebACL.StatementProperty.builder()
                         .managedRuleGroupStatement(CfnWebACL.ManagedRuleGroupStatementProperty.builder()
                                 .vendorName("AWS").name("AWSManagedRulesAmazonIpReputationList").build())
@@ -94,19 +86,16 @@ public class DiceCertStack extends Stack {
                 .build();
     }
 
-    private static CfnWebACL.RuleProperty rateRule(String name, int priority, int limit,
-                                                   CfnWebACL.StatementProperty scopeDown) {
-        CfnWebACL.RateBasedStatementProperty.Builder rate = CfnWebACL.RateBasedStatementProperty.builder()
+    private static CfnWebACL.RuleProperty rateRule(String name, int priority, int limit) {
+        CfnWebACL.RateBasedStatementProperty rate = CfnWebACL.RateBasedStatementProperty.builder()
                 .limit(limit)
                 .aggregateKeyType("IP")
-                .evaluationWindowSec(RATE_WINDOW_SECONDS);
-        if (scopeDown != null) {
-            rate.scopeDownStatement(scopeDown);
-        }
+                .evaluationWindowSec(RATE_WINDOW_SECONDS)
+                .build();
         return CfnWebACL.RuleProperty.builder()
                 .name(name)
                 .priority(priority)
-                .statement(CfnWebACL.StatementProperty.builder().rateBasedStatement(rate.build()).build())
+                .statement(CfnWebACL.StatementProperty.builder().rateBasedStatement(rate).build())
                 // Bloqueio padrão (403): resposta customizada (429) não existe no plano Free e o impede.
                 .action(CfnWebACL.RuleActionProperty.builder()
                         .block(CfnWebACL.BlockActionProperty.builder().build())

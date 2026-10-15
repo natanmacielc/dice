@@ -64,7 +64,7 @@ Meta: US$ 0 por mês no uso normal e, no pior caso, site fora do ar em vez de co
 | Camada | Como fica de graça | O que acontece no limite |
 |---|---|---|
 | CloudFront + WAF + DDoS | plano flat-rate **Free** (`DicePlanStack`): 1 milhão de pedidos e 100 GB por mês, sem cobrança de excedente; pedido bloqueado pelo WAF não conta | uso alto e contínuo por meses: a AWS reduz o desempenho, não cobra |
-| WAF | 3 das 5 regras do plano: 1000 pedidos/5 min por IP em tudo, 300/5 min por IP em `/api/*`, lista de IPs de má reputação da AWS | o IP toma 403 até a janela passar (o plano Free não aceita resposta customizada como 429) |
+| WAF | 2 das 5 regras do plano: 1000 pedidos/5 min por IP em tudo e lista de IPs de má reputação da AWS (limite só para `/api/*` exigiria byte match, que o plano Free não aceita) | o IP toma 403 até a janela passar (o plano Free não aceita resposta customizada como 429) |
 | Origem | sem API Gateway: o CloudFront chama a Function URL do Lambda (alias `live`) com OAC; a URL exige assinatura IAM | quem chamar a URL direto toma 403 |
 | Lambda | cota gratuita (1 milhão de chamadas e 400 mil GB-s por mês) | **kill switch**: acima de 10 mil invocações ou 1.200 s de execução numa hora, a concorrência reservada do app vai a 0 |
 | DynamoDB | provisionado em 25 RCU/25 WCU (cota gratuita permanente), sem autoscaling | o DynamoDB recusa o excedente e o app responde 503 `SERVER_BUSY`; um alarme avisa por e-mail |
