@@ -9,7 +9,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Dado Verificável</name>
+    <name>Roll Dice</name>
 
     <modules>
         <module>dice-core</module>

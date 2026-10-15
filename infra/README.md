@@ -1,6 +1,6 @@
 # infra
 
-AWS CDK (Java) do Dado Verificável. Quatro stacks:
+AWS CDK (Java) do Roll Dice. Quatro stacks:
 
 | Stack | Região | Quem aplica |
 |---|---|---|

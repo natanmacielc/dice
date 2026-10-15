@@ -109,7 +109,7 @@ public final class OgImageRenderer {
             g.fillRect(0, 0, 16, HEIGHT);
 
             int maxWidth = WIDTH - 2 * MARGIN;
-            text(g, BOLD.deriveFont(30f), ACCENT, "DADO VERIFICÁVEL", MARGIN, 110, maxWidth);
+            text(g, BOLD.deriveFont(30f), ACCENT, "ROLL DICE", MARGIN, 110, maxWidth);
             if (card.corner() != null) {
                 Font f = REGULAR.deriveFont(24f);
                 g.setFont(f);

@@ -1,4 +1,4 @@
-# Dado Verificável
+# Roll Dice
 
 Sistema que prova que rolagens de dados em RPGs são imparciais. O resultado deriva de um valor público do drand que não existia quando o pedido foi feito; qualquer pessoa recalcula e confere. O servidor é só um livro-razão: não pode prever, escolher nem reescrever resultados.
 

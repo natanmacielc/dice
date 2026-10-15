@@ -132,7 +132,7 @@ class RollPageTest {
 
     @Test
     void servesStaticSiteFromTheJar() {
-        get("/").then().statusCode(200).body(containsString("Dado Verificável")).body(containsString("/app.js"));
+        get("/").then().statusCode(200).body(containsString("Roll Dice")).body(containsString("/app.js"));
         get("/verifier/chain-v1.js").then().statusCode(200);
         get("/verifier/drand-verify.js").then().statusCode(200);
         get("/vendor/drand-client-1.4.2.mjs").then().statusCode(200);
