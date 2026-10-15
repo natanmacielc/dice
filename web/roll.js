@@ -1,117 +1,112 @@
-// Página /r/{rollId}: acompanha o roll e verifica tudo no navegador.
-import { GENESIS_PREV_HASH, timeOf, verifyProof, verifySegment } from './verifier/chain-v1.js';
-import { fetchRound, verifyBls } from './verifier/drand-verify.js';
-import { describeError, formatDice, runChecks, secondsUntil, summarizeLog } from './page-logic.js';
+// Página /r/{rollId}: acompanha o roll, anima o resultado e confere tudo no navegador.
+import { getJson, verifyRoll, verifyTable } from './api.js';
+import { criticalOf, formatBreakdown } from './page-logic.js';
+import { parseExpression } from './verifier/dice-v1.js';
+import {
+  $, DIE_COLORS, Tray, celebrate, countUp, replay, ring, runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep,
+} from './ui.js';
 
-const $ = (id) => document.getElementById(id);
-const rollId = $('roll').dataset.rollId;
 const STATUS = {
   PENDING: 'Aguardando o drand',
   RESOLVED: 'Resolvido',
   EXPIRED: 'Atrasado: o drand ainda não respondeu',
 };
 
-let expectedAt = null;
-let sessionId = null;
+const root = $('roll');
+const rollId = root.dataset.rollId;
+const { count, sides } = parseExpression(root.dataset.expression);
+const sessionId = $('session-id').textContent.trim();
+const tray = new Tray($('tray'), sides, count);
+const stageRing = ring($('ring'));
+document.documentElement.style.setProperty('--c', DIE_COLORS[sides]);
 
-async function getJson(url) {
-  const response = await fetch(url, { headers: { accept: 'application/json' } });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = new Error(describeError(body, response.status));
-    error.status = response.status;
-    throw error;
-  }
-  return body;
+function setStatus(status) {
+  $('status').textContent = STATUS[status] ?? status;
+  $('status').dataset.status = status;
 }
 
-function renderRoll(roll) {
-  sessionId = roll.sessionId;
-  expectedAt = roll.expectedAt;
-  $('status').textContent = STATUS[roll.status] ?? roll.status;
-  $('status').dataset.status = roll.status;
-  if (roll.result) {
-    $('total').textContent = String(roll.result.total);
-    $('dice').textContent = `dados ${formatDice(roll.result.dice)}`;
-    $('countdown').textContent = '';
-  }
+async function reveal(roll) {
+  const { dice, total, modifier, round } = roll.result;
+  setStatus('RESOLVED');
+  stageRing.progress(1);
+  stageRing.mode('done');
+  $('countdown').textContent = `round #${round} do drand`;
+  await tray.land(dice);
+  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice));
+  replay($('result'), 'is-in');
+  countUp($('total'), total, Math.min(900, 300 + total * 8));
+  $('dice').textContent = formatBreakdown(dice, modifier);
+  runVerificationBadge($('verify-badge'), $('verify-dialog'), rollId, verifyRoll);
 }
 
-function tick() {
-  if (!expectedAt || $('status').dataset.status === 'RESOLVED') return;
-  const s = secondsUntil(expectedAt, Date.now());
-  $('countdown').textContent = s > 0 ? `round alvo sai em ~${s} s` : 'buscando o round no drand…';
-}
-
-function renderChecks(checks) {
-  const list = $('checks');
-  list.replaceChildren();
-  for (const c of checks) {
-    const item = document.createElement('li');
-    item.className = c.ok ? 'ok' : 'fail';
-    const label = document.createElement('strong');
-    label.textContent = `${c.ok ? '✓' : '✗'} ${c.label}`;
-    const detail = document.createElement('span');
-    detail.textContent = c.detail;
-    item.append(label, detail);
-    list.append(item);
-  }
-  const allOk = checks.every((c) => c.ok);
-  $('verdict').textContent = allOk
-    ? 'Tudo confere: este resultado não podia ser escolhido nem previsto.'
-    : 'Atenção: alguma verificação falhou. Não confie neste resultado.';
-  $('verdict').className = allOk ? 'verdict ok' : 'verdict fail';
-}
-
-async function verify() {
-  $('checks').replaceChildren(Object.assign(document.createElement('li'), { className: 'muted', textContent: 'Verificando…' }));
-  try {
-    const proof = await getJson(`/rolls/${rollId}/proof`);
-    renderChecks(await runChecks({ proof, verifyProof, fetchRound, verifyBls, timeOf }));
-  } catch (e) {
-    renderChecks([{ id: 'proof', label: 'Prova obtida do servidor', ok: false, detail: e.message }]);
-  }
-}
-
-async function poll() {
-  try {
-    const roll = await getJson(`/rolls/${rollId}`);
-    renderRoll(roll);
-    if (roll.status === 'RESOLVED') {
-      await verify();
-      return;
+/** Anel e contagem até o round alvo; devolve a função que para a animação. */
+function countdown(roll) {
+  const target = Date.parse(roll.expectedAt);
+  const start = Math.min(Date.now(), Date.parse(roll.requestedAt));
+  const span = Math.max(1000, target - start);
+  let running = true;
+  const frame = () => {
+    if (!running) return;
+    const left = Math.ceil((target - Date.now()) / 1000);
+    stageRing.progress((Date.now() - start) / span);
+    if ($('status').dataset.status !== 'EXPIRED') {
+      $('countdown').textContent = left > 0
+        ? `O round #${roll.targetRound} sai em ${left} s. Esse número ainda não existe.`
+        : `Buscando o round #${roll.targetRound} no drand…`;
     }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  return () => {
+    running = false;
+  };
+}
+
+async function follow() {
+  let roll;
+  try {
+    roll = await getJson(`/rolls/${rollId}`);
   } catch (e) {
     $('countdown').textContent = e.message;
-    if (e.status === 404) return;
+    if (e.status !== 404) setTimeout(follow, 3000);
+    return;
   }
-  setTimeout(poll, 3000);
+  if (roll.status === 'RESOLVED') {
+    tray.tumble();
+    await sleep(450);
+    await reveal(roll);
+    return;
+  }
+
+  setStatus(roll.status);
+  $('total').textContent = '?';
+  tray.tumble();
+  stageRing.mode('waiting');
+  const stop = countdown(roll);
+  await sleep(Math.min(Math.max(0, Date.parse(roll.expectedAt) - Date.now()) + 300, 8000));
+  for (;;) {
+    try {
+      roll = await getJson(`/rolls/${rollId}`);
+      setStatus(roll.status);
+      if (roll.status === 'RESOLVED') break;
+      if (roll.status === 'EXPIRED') $('countdown').textContent = 'O drand está demorando. O pedido continua registrado e público.';
+    } catch (e) {
+      $('countdown').textContent = e.message;
+      if (e.status === 404) {
+        stop();
+        return;
+      }
+    }
+    await sleep(roll.status === 'EXPIRED' ? 3000 : 1000);
+  }
+  stop();
+  await reveal(roll);
 }
 
-$('verify-session').addEventListener('click', async () => {
-  const out = $('session-result');
-  out.className = 'muted';
-  out.textContent = 'Baixando o log da mesa…';
-  try {
-    const entries = [];
-    let after = 0;
-    for (;;) {
-      const page = await getJson(`/sessions/${sessionId}/log?after=${after}`);
-      entries.push(...page.entries);
-      if (page.next === null) break;
-      after = page.next;
-    }
-    const result = await verifySegment(entries, GENESIS_PREV_HASH);
-    const s = summarizeLog(entries);
-    out.className = result.valid ? 'ok' : 'fail';
-    out.textContent = result.valid
-      ? `✓ Cadeia íntegra desde o início: ${s.entries} entradas, ${s.requests} pedidos, ${s.resolved} resolvidos, ${s.pending.length} pendentes.`
-      : `✗ Cadeia inválida: ${result.code} (${result.message})`;
-  } catch (e) {
-    out.className = 'fail';
-    out.textContent = e.message;
-  }
+$('share-btn').addEventListener('click', () => shareLink(location.href, document.title));
+$('verify-table').addEventListener('click', () => {
+  runTableCheck({ button: $('verify-table'), chain: $('chain'), out: $('chain-result') }, sessionId, verifyTable);
 });
 
-setInterval(tick, 250);
-poll();
+setupDialogs();
+follow();
