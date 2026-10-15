@@ -82,7 +82,7 @@ class RollPageTest {
         assertFalse(objectExists(rollId));
 
         clock.set(Quicknet.timeOf(LATEST + 2));
-        get("/rolls/" + rollId).then().statusCode(200); // resolve e publica a imagem
+        get("/api/rolls/" + rollId).then().statusCode(200); // resolve e publica a imagem
         ResponseBytes<GetObjectResponse> png = object(rollId);
         assertEquals("image/png", png.response().contentType());
         assertTrue(png.response().cacheControl().contains("immutable"));
@@ -90,7 +90,7 @@ class RollPageTest {
         assertEquals(1200, img.getWidth());
         assertEquals(630, img.getHeight());
 
-        String total = get("/rolls/" + rollId).then().extract().path("result.total").toString();
+        String total = get("/api/rolls/" + rollId).then().extract().path("result.total").toString();
         get("/r/" + rollId).then().statusCode(200)
                 .body(containsString("<meta property=\"og:image\" content=\"" + BASE + "/og/" + rollId + ".png\">"))
                 .body(containsString("<meta property=\"og:title\" content=\"2d6+3 = " + total + " · dados "))
@@ -102,7 +102,7 @@ class RollPageTest {
         String rollId = requestRoll(newSession(), "s3-fora", "1d20").then().statusCode(201).extract().path("rollId");
         images.down = true;
         clock.set(Quicknet.timeOf(LATEST + 2));
-        get("/rolls/" + rollId).then().statusCode(200).body(containsString("RESOLVED"));
+        get("/api/rolls/" + rollId).then().statusCode(200).body(containsString("RESOLVED"));
         assertFalse(objectExists(rollId));
         get("/r/" + rollId).then().statusCode(200)
                 .body(containsString("<meta property=\"og:image\" content=\"" + BASE + "/static/og-default.png\">"));
@@ -132,7 +132,7 @@ class RollPageTest {
 
     @Test
     void servesStaticSiteFromTheJar() {
-        get("/").then().statusCode(200).body(containsString("Dado Verificável")).body(containsString("/app.js"));
+        get("/").then().statusCode(200).body(containsString("Roll Dice")).body(containsString("/app.js"));
         get("/verifier/chain-v1.js").then().statusCode(200);
         get("/verifier/drand-verify.js").then().statusCode(200);
         get("/vendor/drand-client-1.4.2.mjs").then().statusCode(200);

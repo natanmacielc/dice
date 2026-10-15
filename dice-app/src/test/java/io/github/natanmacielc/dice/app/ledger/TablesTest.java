@@ -61,7 +61,7 @@ class TablesTest {
         if (cursor != null) {
             body.put("cursor", cursor);
         }
-        return given().contentType(ContentType.JSON).body(body).post("/me/tables");
+        return given().contentType(ContentType.JSON).body(body).post("/api/me/tables");
     }
 
     /** Uma identidade nova por teste, com um aparelho vinculado: a lista começa vazia. */
@@ -164,7 +164,7 @@ class TablesTest {
         String sig = Player.signRaw(TestPlayers.ANA_SK, Player.tablesMessage("remove", TestPlayers.ANA_PK, when, null, null));
         given().contentType(ContentType.JSON).body(Map.of("action", "list", "auth", Map.of("publicKey", TestPlayers.ANA_PK,
                         "identityKey", TestPlayers.ANA_PK, "links", List.of(), "at", when, "signature", sig)))
-                .post("/me/tables").then().statusCode(401).body("error", equalTo("AUTH_INVALID"));
+                .post("/api/me/tables").then().statusCode(401).body("error", equalTo("AUTH_INVALID"));
         // Bruno tentando ler a lista da Ana com a chave dele.
         call(TestPlayers.BRUNO_SK, TestPlayers.BRUNO_PK, TestPlayers.ANA_PK, List.of(), "list", null, null, clock.instant())
                 .then().statusCode(401).body("error", equalTo("AUTH_INVALID"));
@@ -180,7 +180,7 @@ class TablesTest {
         // Ação desconhecida ou corpo sem auth.
         Identity.fresh().root("drop", null, null, clock.instant())
                 .then().statusCode(400).body("error", equalTo("INVALID_REQUEST"));
-        given().contentType(ContentType.JSON).body(Map.of("action", "list")).post("/me/tables")
+        given().contentType(ContentType.JSON).body(Map.of("action", "list")).post("/api/me/tables")
                 .then().statusCode(401).body("error", equalTo("AUTH_INVALID"));
     }
 }

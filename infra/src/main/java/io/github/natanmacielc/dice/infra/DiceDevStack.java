@@ -6,26 +6,18 @@ import java.util.Map;
 import software.amazon.awscdk.Annotations;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.Fn;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
-import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
-import software.amazon.awscdk.services.apigatewayv2.CfnStage;
-import software.amazon.awscdk.services.apigatewayv2.HttpApi;
-import software.amazon.awscdk.services.apigatewayv2.HttpMethod;
-import software.amazon.awscdk.services.apigatewayv2.HttpStage;
-import software.amazon.awscdk.services.apigatewayv2.ThrottleSettings;
 import software.amazon.awscdk.services.certificatemanager.ICertificate;
 import software.amazon.awscdk.services.cloudfront.AllowedMethods;
 import software.amazon.awscdk.services.cloudfront.BehaviorOptions;
+import software.amazon.awscdk.services.cloudfront.IOrigin;
 import software.amazon.awscdk.services.cloudfront.CachePolicy;
 import software.amazon.awscdk.services.cloudfront.Distribution;
 import software.amazon.awscdk.services.cloudfront.HeadersFrameOption;
 import software.amazon.awscdk.services.cloudfront.HeadersReferrerPolicy;
 import software.amazon.awscdk.services.cloudfront.HttpVersion;
-import software.amazon.awscdk.services.cloudfront.OriginProtocolPolicy;
 import software.amazon.awscdk.services.cloudfront.OriginRequestPolicy;
 import software.amazon.awscdk.services.cloudfront.PriceClass;
 import software.amazon.awscdk.services.cloudfront.ResponseHeadersContentSecurityPolicy;
@@ -37,18 +29,29 @@ import software.amazon.awscdk.services.cloudfront.ResponseHeadersStrictTransport
 import software.amazon.awscdk.services.cloudfront.ResponseSecurityHeadersBehavior;
 import software.amazon.awscdk.services.cloudfront.SecurityPolicyProtocol;
 import software.amazon.awscdk.services.cloudfront.ViewerProtocolPolicy;
-import software.amazon.awscdk.services.cloudfront.origins.HttpOrigin;
+import software.amazon.awscdk.services.cloudfront.origins.FunctionUrlOrigin;
 import software.amazon.awscdk.services.cloudfront.origins.S3BucketOrigin;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
+import software.amazon.awscdk.services.cloudwatch.MetricOptions;
+import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Alias;
 import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.FunctionUrl;
+import software.amazon.awscdk.services.lambda.FunctionUrlAuthType;
+import software.amazon.awscdk.services.lambda.FunctionUrlOptions;
+import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.SnapStartConf;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -64,9 +67,16 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.assets.AssetOptions;
 import software.amazon.awscdk.services.s3.deployment.BucketDeployment;
 import software.amazon.awscdk.services.s3.deployment.Source;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
+import software.amazon.awscdk.services.sns.subscriptions.LambdaSubscription;
 import software.constructs.Construct;
 
-/** Ambiente dev em sa-east-1: CloudFront, API Gateway HTTP API, Lambda (SnapStart), DynamoDB e S3. */
+/**
+ * Ambiente dev em sa-east-1: CloudFront (com o WAF da DiceCertStack), Lambda (SnapStart) por Function URL
+ * com OAC, DynamoDB provisionado e S3. Tudo dentro das cotas gratuitas; o kill switch desliga o app
+ * quando o uso foge muito do esperado.
+ */
 public class DiceDevStack extends Stack {
 
     /** Mesma CSP do app (application.properties); o CloudFront garante o header em todas as respostas. */
@@ -81,19 +91,33 @@ public class DiceDevStack extends Stack {
     /** Arquivos de web/ que não vão para o site (testes e documentação). */
     static final List<String> WEB_EXCLUDES = List.of("**/*.test.mjs", "**/README.md");
 
-    static final String ROUTE_CREATE_SESSION = "POST /sessions";
-    static final String ROUTE_CREATE_ROLL = "POST /sessions/{sessionId}/rolls";
-    static final String ROUTE_CREATE_PAIRING = "POST /pairings";
-    static final String ROUTE_MY_TABLES = "POST /me/tables";
+    /** Desliga o app: concorrência reservada 0. Religar é manual (infra/README.md, "Derrubar e religar"). */
+    static final String KILL_SWITCH_CODE = """
+            import os
+            import boto3
 
-    public DiceDevStack(Construct scope, String id, StackProps props, DiceConfig cfg, ICertificate certificate) {
+
+            def handler(event, context):
+                boto3.client("lambda").put_function_concurrency(
+                    FunctionName=os.environ["APP_FUNCTION"], ReservedConcurrentExecutions=0)
+                print("app desligado: concorrência reservada = 0")
+            """;
+
+    private final Distribution distribution;
+
+    public DiceDevStack(Construct scope, String id, StackProps props, DiceConfig cfg, ICertificate certificate,
+                        String webAclArn) {
         super(scope, id, props);
 
         // ---------- Dados ----------
         Table table = Table.Builder.create(this, "Ledger")
                 .partitionKey(Attribute.builder().name("PK").type(AttributeType.STRING).build())
                 .sortKey(Attribute.builder().name("SK").type(AttributeType.STRING).build())
-                .billingMode(BillingMode.PAY_PER_REQUEST)
+                // Provisionado sem autoscaling: dentro da cota gratuita e com teto. Estourou, o DynamoDB recusa
+                // (o app responde 503 SERVER_BUSY) em vez de cobrar.
+                .billingMode(BillingMode.PROVISIONED)
+                .readCapacity(cfg.tableReadCapacity())
+                .writeCapacity(cfg.tableWriteCapacity())
                 // Só os pareamentos de aparelhos (PAIRING#) têm expiresAt; a cadeia nunca expira.
                 .timeToLiveAttribute("expiresAt")
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
@@ -140,34 +164,10 @@ public class DiceDevStack extends Stack {
                 .resources(List.of(og.arnForObjects("og/*")))
                 .build());
 
-        // ---------- API (rotas explícitas, com throttling) ----------
-        HttpApi api = HttpApi.Builder.create(this, "Api").createDefaultStage(false).build();
-        HttpStage stage = HttpStage.Builder.create(this, "DefaultStage")
-                .httpApi(api)
-                .stageName("$default")
-                .autoDeploy(true)
-                .throttle(ThrottleSettings.builder().rateLimit(20).burstLimit(40).build())
-                .build();
-        CfnStage cfnStage = (CfnStage) stage.getNode().getDefaultChild();
-        Map<String, Object> routeSettings = new LinkedHashMap<>();
-        routeSettings.put(ROUTE_CREATE_SESSION, throttle(1, 5));
-        routeSettings.put(ROUTE_CREATE_ROLL, throttle(5, 10));
-        routeSettings.put(ROUTE_CREATE_PAIRING, throttle(1, 5));
-        routeSettings.put(ROUTE_MY_TABLES, throttle(5, 10));
-        cfnStage.addPropertyOverride("RouteSettings", routeSettings);
+        // ---------- Origem fechada: só o CloudFront (OAC) chama a Function URL ----------
+        FunctionUrl url = live.addFunctionUrl(FunctionUrlOptions.builder().authType(FunctionUrlAuthType.AWS_IAM).build());
 
-        HttpLambdaIntegration integration = new HttpLambdaIntegration("AppIntegration", live);
-        route(api, integration, "/sessions", HttpMethod.POST);
-        route(api, integration, "/sessions/{sessionId}/rolls", HttpMethod.POST);
-        route(api, integration, "/sessions/{sessionId}/log", HttpMethod.GET);
-        route(api, integration, "/rolls/{rollId}", HttpMethod.GET);
-        route(api, integration, "/rolls/{rollId}/proof", HttpMethod.GET);
-        route(api, integration, "/r/{rollId}", HttpMethod.GET);
-        route(api, integration, "/pairings", HttpMethod.POST);
-        route(api, integration, "/pairings/{pairingId}", HttpMethod.GET);
-        route(api, integration, "/pairings/{pairingId}/device", HttpMethod.POST);
-        route(api, integration, "/pairings/{pairingId}/identity", HttpMethod.POST);
-        route(api, integration, "/me/tables", HttpMethod.POST);
+        killSwitch(cfg, fn, table);
 
         // ---------- CloudFront ----------
         ResponseHeadersPolicy headers = ResponseHeadersPolicy.Builder.create(this, "SecurityHeaders")
@@ -184,12 +184,10 @@ public class DiceDevStack extends Stack {
                         .build())
                 .build();
 
-        String apiDomain = Fn.select(2, Fn.split("/", api.getApiEndpoint()));
-        HttpOrigin apiOrigin = HttpOrigin.Builder.create(apiDomain).protocolPolicy(OriginProtocolPolicy.HTTPS_ONLY).build();
-        BehaviorOptions apiRead = apiBehavior(apiOrigin, headers, AllowedMethods.ALLOW_GET_HEAD);
-        BehaviorOptions apiWrite = apiBehavior(apiOrigin, headers, AllowedMethods.ALLOW_ALL);
+        IOrigin appOrigin = FunctionUrlOrigin.withOriginAccessControl(url);
 
         // Ordem fixa (LinkedHashMap): Map.of muda a ordem entre execuções e geraria diffs à toa no template.
+        // O plano Free do CloudFront aceita até 5 behaviors: default (site), /og/*, /r/* e /api/*.
         Map<String, BehaviorOptions> behaviors = new LinkedHashMap<>();
         behaviors.put("/og/*", BehaviorOptions.builder()
                 .origin(S3BucketOrigin.withOriginAccessControl(og))
@@ -197,14 +195,12 @@ public class DiceDevStack extends Stack {
                 .cachePolicy(CachePolicy.CACHING_OPTIMIZED)
                 .responseHeadersPolicy(headers)
                 .build());
-        behaviors.put("/r/*", apiRead);
-        behaviors.put("/rolls/*", apiRead);
-        behaviors.put("/sessions*", apiWrite);
-        behaviors.put("/pairings*", apiWrite);
-        behaviors.put("/me/*", apiWrite);
+        behaviors.put("/r/*", appBehavior(appOrigin, headers, AllowedMethods.ALLOW_GET_HEAD));
+        behaviors.put("/api/*", appBehavior(appOrigin, headers, AllowedMethods.ALLOW_ALL));
 
-        Distribution distribution = Distribution.Builder.create(this, "Cdn")
+        this.distribution = Distribution.Builder.create(this, "Cdn")
                 .domainNames(List.of(cfg.domainName()))
+                .webAclId(webAclArn)
                 .certificate(certificate)
                 .minimumProtocolVersion(SecurityPolicyProtocol.TLS_V1_2_2021)
                 .httpVersion(HttpVersion.HTTP2_AND_3)
@@ -218,6 +214,15 @@ public class DiceDevStack extends Stack {
                         .build())
                 .additionalBehaviors(behaviors)
                 .build();
+
+        // O CDK concede lambda:InvokeFunctionUrl ao CloudFront; Function URLs novas (desde out/2025) exigem
+        // também lambda:InvokeFunction, restrito a chamadas que chegam pela URL.
+        live.addPermission("CloudFrontInvokeViaUrl", Permission.builder()
+                .principal(new ServicePrincipal("cloudfront.amazonaws.com"))
+                .action("lambda:InvokeFunction")
+                .invokedViaFunctionUrl(true)
+                .sourceArn(distribution.getDistributionArn())
+                .build());
 
         IHostedZone zone = DiceCertStack.zone(this, cfg);
         ARecord.Builder.create(this, "AliasA").zone(zone).recordName(cfg.recordName())
@@ -235,14 +240,61 @@ public class DiceDevStack extends Stack {
                 .build();
 
         CfnOutput.Builder.create(this, "Url").value(cfg.publicBaseUrl()).build();
-        CfnOutput.Builder.create(this, "ApiEndpoint").value(api.getApiEndpoint()).build();
+        // A URL direta da função responde 403 sem a assinatura do CloudFront (o smoke confere).
+        CfnOutput.Builder.create(this, "FunctionUrl").value(url.getUrl()).build();
     }
 
-    private static Map<String, Object> throttle(int rate, int burst) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("ThrottlingRateLimit", rate);
-        m.put("ThrottlingBurstLimit", burst);
-        return m;
+    public String distributionArn() {
+        return distribution.getDistributionArn();
+    }
+
+    /**
+     * Uso muito acima do esperado numa hora (invocações ou tempo de execução) desliga o app: o pior caso
+     * vira site fora do ar, não conta alta. Throttle do DynamoDB só avisa (o teto dele já é rígido).
+     */
+    private void killSwitch(DiceConfig cfg, Function app, Table table) {
+        Topic kill = Topic.Builder.create(this, "KillTopic").displayName("Dado: app desligado").build();
+        Topic notice = Topic.Builder.create(this, "NoticeTopic").displayName("Dado: aviso").build();
+        cfg.alertEmail().ifPresent(email -> {
+            kill.addSubscription(new EmailSubscription(email));
+            notice.addSubscription(new EmailSubscription(email));
+        });
+
+        LogGroup logs = LogGroup.Builder.create(this, "KillSwitchLogs")
+                .retention(RetentionDays.ONE_MONTH)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build();
+        Function killer = Function.Builder.create(this, "KillSwitch")
+                .runtime(Runtime.PYTHON_3_13)
+                .handler("index.handler")
+                .code(Code.fromInline(KILL_SWITCH_CODE))
+                .timeout(Duration.seconds(30))
+                .environment(Map.of("APP_FUNCTION", app.getFunctionName()))
+                .logGroup(logs)
+                .build();
+        killer.addToRolePolicy(PolicyStatement.Builder.create()
+                .actions(List.of("lambda:PutFunctionConcurrency"))
+                .resources(List.of(app.getFunctionArn()))
+                .build());
+        kill.addSubscription(new LambdaSubscription(killer));
+
+        MetricOptions hourlySum = MetricOptions.builder().period(Duration.hours(1)).statistic("Sum").build();
+        alarm("InvocationsAlarm", app.metricInvocations(hourlySum), cfg.killSwitchInvocationsPerHour(), kill);
+        alarm("DurationAlarm", app.metricDuration(hourlySum), cfg.killSwitchDurationMsPerHour(), kill);
+        MetricOptions fiveMinSum = MetricOptions.builder().period(Duration.minutes(5)).statistic("Sum").build();
+        alarm("ReadThrottleAlarm", table.metric("ReadThrottleEvents", fiveMinSum), 0, notice);
+        alarm("WriteThrottleAlarm", table.metric("WriteThrottleEvents", fiveMinSum), 0, notice);
+    }
+
+    private void alarm(String id, IMetric metric, int threshold, Topic topic) {
+        Alarm alarm = Alarm.Builder.create(this, id)
+                .metric(metric)
+                .threshold(threshold)
+                .evaluationPeriods(1)
+                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
+                .treatMissingData(TreatMissingData.NOT_BREACHING)
+                .build();
+        alarm.addAlarmAction(new SnsAction(topic));
     }
 
     private Bucket privateBucket(String id) {
@@ -254,11 +306,7 @@ public class DiceDevStack extends Stack {
                 .build();
     }
 
-    private static void route(HttpApi api, HttpLambdaIntegration integration, String path, HttpMethod method) {
-        api.addRoutes(AddRoutesOptions.builder().path(path).methods(List.of(method)).integration(integration).build());
-    }
-
-    private static BehaviorOptions apiBehavior(HttpOrigin origin, ResponseHeadersPolicy headers, AllowedMethods methods) {
+    private static BehaviorOptions appBehavior(IOrigin origin, ResponseHeadersPolicy headers, AllowedMethods methods) {
         return BehaviorOptions.builder()
                 .origin(origin)
                 .viewerProtocolPolicy(ViewerProtocolPolicy.REDIRECT_TO_HTTPS)

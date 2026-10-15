@@ -37,7 +37,7 @@ class PairingTest {
     }
 
     static String create() {
-        return given().contentType(ContentType.JSON).post("/pairings").then().statusCode(201)
+        return given().contentType(ContentType.JSON).post("/api/pairings").then().statusCode(201)
                 .body("$", hasKey("expiresAt"))
                 .extract().path("pairingId");
     }
@@ -54,48 +54,48 @@ class PairingTest {
     @Test
     void fullFlowRelaysDeviceKeyAndLinks() {
         String id = create();
-        get("/pairings/" + id).then().statusCode(200).body("$", not(hasKey("device"))).body("$", not(hasKey("identity")));
+        get("/api/pairings/" + id).then().statusCode(200).body("$", not(hasKey("device"))).body("$", not(hasKey("identity")));
 
         // A identidade não pode mandar vínculos antes de o aparelho novo aparecer.
         Player.Link link = Player.link(TestPlayers.ANA_SK, TestPlayers.ANA_PK, TestPlayers.PHONE_PK);
-        post("/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(link), "Ana"))
+        post("/api/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(link), "Ana"))
                 .then().statusCode(409).body("error", equalTo("PAIRING_WAITING_DEVICE"));
 
-        post("/pairings/" + id + "/device", Map.of("deviceKey", TestPlayers.PHONE_PK, "mac", MAC))
+        post("/api/pairings/" + id + "/device", Map.of("deviceKey", TestPlayers.PHONE_PK, "mac", MAC))
                 .then().statusCode(200).body("device.deviceKey", equalTo(TestPlayers.PHONE_PK));
-        post("/pairings/" + id + "/device", Map.of("deviceKey", TestPlayers.BRUNO_PK, "mac", MAC))
+        post("/api/pairings/" + id + "/device", Map.of("deviceKey", TestPlayers.BRUNO_PK, "mac", MAC))
                 .then().statusCode(409).body("error", equalTo("PAIRING_STEP_DONE"));
 
         // Vínculo para outra chave, ou de outra identidade: não fecha no aparelho registrado.
-        post("/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK,
+        post("/api/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK,
                 List.of(Player.link(TestPlayers.ANA_SK, TestPlayers.ANA_PK, TestPlayers.BRUNO_PK)), "Ana"))
                 .then().statusCode(400).body("error", equalTo("PAIRING_LINK_INVALID"));
-        post("/pairings/" + id + "/identity", identity(TestPlayers.BRUNO_PK, List.of(link), "Ana"))
+        post("/api/pairings/" + id + "/identity", identity(TestPlayers.BRUNO_PK, List.of(link), "Ana"))
                 .then().statusCode(400).body("error", equalTo("PAIRING_LINK_INVALID"));
-        post("/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(), "Ana"))
+        post("/api/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(), "Ana"))
                 .then().statusCode(400).body("error", equalTo("PAIRING_INVALID"));
 
-        post("/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(link), "Ana"))
+        post("/api/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(link), "Ana"))
                 .then().statusCode(200)
                 .body("identity.identityKey", equalTo(TestPlayers.ANA_PK))
                 .body("identity.links[0].deviceKey", equalTo(TestPlayers.PHONE_PK))
                 .body("identity.name", equalTo("Ana"));
-        post("/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(link), "Ana"))
+        post("/api/pairings/" + id + "/identity", identity(TestPlayers.ANA_PK, List.of(link), "Ana"))
                 .then().statusCode(409).body("error", equalTo("PAIRING_STEP_DONE"));
-        get("/pairings/" + id).then().statusCode(200).body("identity.mac", equalTo(MAC));
+        get("/api/pairings/" + id).then().statusCode(200).body("identity.mac", equalTo(MAC));
     }
 
     @Test
     void rejectsMalformedInputAndExpiresAfterTenMinutes() {
         String id = create();
-        post("/pairings/" + id + "/device", Map.of("deviceKey", "xyz", "mac", MAC))
+        post("/api/pairings/" + id + "/device", Map.of("deviceKey", "xyz", "mac", MAC))
                 .then().statusCode(400).body("error", equalTo("PAIRING_INVALID"));
-        get("/pairings/0000000000000000").then().statusCode(404);
-        get("/pairings/nao-e-um-id").then().statusCode(404);
+        get("/api/pairings/0000000000000000").then().statusCode(404);
+        get("/api/pairings/nao-e-um-id").then().statusCode(404);
 
         clock.set(Quicknet.timeOf(4_000_000).plusSeconds(601));
-        get("/pairings/" + id).then().statusCode(404);
-        post("/pairings/" + id + "/device", Map.of("deviceKey", TestPlayers.PHONE_PK, "mac", MAC))
+        get("/api/pairings/" + id).then().statusCode(404);
+        post("/api/pairings/" + id + "/device", Map.of("deviceKey", TestPlayers.PHONE_PK, "mac", MAC))
                 .then().statusCode(404);
     }
 }

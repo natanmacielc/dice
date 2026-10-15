@@ -15,7 +15,7 @@ async function newDevice() {
 
 test('link do pareamento: só aceita id de 16 caracteres e segredo de 32 hex', () => {
   const secret = newSecret();
-  const url = pairingUrl('https://dices.nimbos.solutions', ID, secret);
+  const url = pairingUrl('https://dice.nimbos.solutions', ID, secret);
   assert.deepEqual(parsePairingFragment(new URL(url).hash), { pairingId: ID, secret });
   for (const bad of ['', '#parear=', `#parear=${ID}`, `#parear=${ID}.xyz`, `#parear=ABC.${secret}`, `#mesa=${ID}.${secret}`]) {
     assert.equal(parsePairingFragment(bad), null, bad);

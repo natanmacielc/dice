@@ -6,7 +6,7 @@ import { playerMessage } from './verifier/chain-v2.js';
 import { $, DIE_COLORS, copyButton, dieIcon, h, renderChecks } from './ui.js';
 
 const SESSION_KEY = 'dice.sessionId';
-const REPO = 'https://github.com/natanmacielc/dices';
+const REPO = 'https://github.com/natanmacielc/dice';
 
 // ---------- Entrada animada das seções ----------
 
@@ -121,11 +121,11 @@ function renderSummary(proof) {
 function renderPython(proof) {
   const r = proof.roll;
   $('python-cmds').replaceChildren(
-    command(`git clone ${REPO}.git\ncd dices/tools/verify-py`),
+    command(`git clone ${REPO}.git\ncd dice/tools/verify-py`),
     h('p', { class: 'field-help', text: 'Refaz o dado a partir dos ingredientes:' }),
     command(`python3 -m dice_verify --randomness ${proof.beacon.randomness} --seed ${shellQuote(r.clientSeed)} --nonce ${r.nonce} --expr ${r.expression} --signature ${proof.beacon.signature}`),
     h('p', { class: 'field-help', text: 'Ou confere a prova inteira (cadeia, assinatura de quem rolou, round e resultado):' }),
-    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`),
+    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/api/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`),
     ...playerBlock(proof));
 }
 

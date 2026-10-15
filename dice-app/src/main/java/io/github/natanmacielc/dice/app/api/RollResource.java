@@ -9,7 +9,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
 
-@Path("/rolls")
+@Path("/api/rolls")
 @Produces(MediaType.APPLICATION_JSON)
 public class RollResource {
 

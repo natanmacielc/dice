@@ -1,4 +1,4 @@
-// Verificador independente do Dado Verificável, algoritmo dice-v1 (spec/ALGORITHM.md).
+// Verificador independente do Roll Dice, algoritmo dice-v1 (spec/ALGORITHM.md).
 // ES module sem dependências. Usa Web Crypto, então roda no navegador e no Node 22.
 
 export const ALGORITHM = 'dice-v1';

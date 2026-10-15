@@ -1,4 +1,4 @@
-"""Verificador independente do Dado Verificável (algoritmo dice-v1). Só stdlib."""
+"""Verificador independente do Roll Dice (algoritmo dice-v1). Só stdlib."""
 
 from .core import (
     ALGORITHM,

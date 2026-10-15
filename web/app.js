@@ -95,7 +95,7 @@ function enterTable(id, name, message) {
 }
 
 async function createTable(name) {
-  const session = await postJson('/sessions', name ? { name } : {});
+  const session = await postJson('/api/sessions', name ? { name } : {});
   setTable(session.sessionId, session.name ?? null);
   rememberTable(session.sessionId);
   return session.sessionId;
@@ -117,7 +117,7 @@ $('table-new').addEventListener('submit', async (event) => {
 /** Confere no servidor que a mesa existe antes de adotá-la. */
 async function tableExists(id) {
   try {
-    await getJson(`/sessions/${encodeURIComponent(id)}/log?limit=1`);
+    await getJson(`/api/sessions/${encodeURIComponent(id)}/log?limit=1`);
     return true;
   } catch (e) {
     if (e.status === 404) return false;
@@ -359,7 +359,7 @@ async function waitPairing(kind, run, pairingId, expiresAt, ready) {
   for (;;) {
     if (runs[kind] !== run) throw Object.assign(new Error('cancelado'), { cancelled: true });
     if (Date.now() > Date.parse(expiresAt)) throw new Error('O link expirou. Gere outro no aparelho que já rola.');
-    const pairing = await getJson(`/pairings/${encodeURIComponent(pairingId)}`);
+    const pairing = await getJson(`/api/pairings/${encodeURIComponent(pairingId)}`);
     if (ready(pairing)) return pairing;
     await sleep(PAIR_POLL_MS);
   }
@@ -379,7 +379,7 @@ $('pair-dialog').addEventListener('opened', async () => {
     await identity();
     const secret = newSecret();
     const [{ pairingId, expiresAt }, { qrcode }] = await Promise.all([
-      postJson('/pairings', {}), import('./vendor/qrcode-generator-2.0.4.mjs')]);
+      postJson('/api/pairings', {}), import('./vendor/qrcode-generator-2.0.4.mjs')]);
     const url = pairingUrl(location.origin, pairingId, secret);
     const qr = qrcode(0, 'M');
     qr.addData(url);
@@ -391,7 +391,7 @@ $('pair-dialog').addEventListener('opened', async () => {
     say('Esperando o outro aparelho abrir o link…');
     const withDevice = await waitPairing('pair', run, pairingId, expiresAt, (p) => p.device);
     const body = await answerDevice({ pairing: withDevice, secret, name: playerName, linkDevice });
-    await postJson(`/pairings/${encodeURIComponent(pairingId)}/identity`, body);
+    await postJson(`/api/pairings/${encodeURIComponent(pairingId)}/identity`, body);
     say(`Pronto. Confirme no outro aparelho e ele rola como ${playerName}.`);
   } catch (e) {
     if (!e.cancelled) say(e.message);
@@ -421,8 +421,8 @@ async function joinFromLink() {
     const { pairingId, secret } = parsed;
     say('Conectando com o outro aparelho…');
     const me = await identity();
-    const pairing = await getJson(`/pairings/${encodeURIComponent(pairingId)}`);
-    await postJson(`/pairings/${encodeURIComponent(pairingId)}/device`,
+    const pairing = await getJson(`/api/pairings/${encodeURIComponent(pairingId)}`);
+    await postJson(`/api/pairings/${encodeURIComponent(pairingId)}/device`,
       { deviceKey: me.publicKey, mac: await deviceMac(secret, pairingId, me.publicKey) });
     say('Esperando o outro aparelho autorizar…');
     const done = await waitPairing('join', run, pairingId, pairing.expiresAt, (p) => p.identity);
@@ -601,7 +601,7 @@ async function waitForResult(receipt) {
     await sleep(Math.min(Math.max(0, target - Date.now()) + 300, 8000));
     const giveUp = Date.now() + GIVE_UP_MS;
     for (;;) {
-      const roll = await getJson(`/rolls/${receipt.rollId}`).catch((e) => {
+      const roll = await getJson(`/api/rolls/${receipt.rollId}`).catch((e) => {
         if (e.status === 404) throw e;
         return null; // falha passageira: tenta de novo
       });
@@ -666,7 +666,7 @@ async function roll() {
       postRoll: async (table) => {
         // Assina para a mesa desta tentativa: a mesa entra na mensagem assinada.
         const player = await signRequest({ sessionId: table, clientSeed, expression: expr, name });
-        return postJson(`/sessions/${encodeURIComponent(table)}/rolls`, { clientSeed, expression: expr, player });
+        return postJson(`/api/sessions/${encodeURIComponent(table)}/rolls`, { clientSeed, expression: expr, player });
       },
     });
     if (recreated) toast(RECREATED[reason]);

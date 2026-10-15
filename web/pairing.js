@@ -52,7 +52,7 @@ export const identityMac = (secret, pairingId, pkg) => sign(secret, identityData
 
 /**
  * Aparelho que já tem a identidade, ao ver o aparelho novo no pareamento: confere que a chave veio de
- * quem abriu o link e devolve o corpo de POST /pairings/{id}/identity. linkDevice assina o vínculo.
+ * quem abriu o link e devolve o corpo de POST /api/pairings/{id}/identity. linkDevice assina o vínculo.
  */
 export async function answerDevice({ pairing, secret, name, linkDevice }) {
   const device = pairing.device;

@@ -14,7 +14,7 @@
 
     <artifactId>dice-infra</artifactId>
     <name>dice-infra</name>
-    <description>AWS CDK do Dado Verificável. Deploy só pelo GitHub Actions.</description>
+    <description>AWS CDK do Roll Dice. Deploy só pelo GitHub Actions.</description>
 
     <properties>
         <aws-cdk-lib.version>2.271.0</aws-cdk-lib.version>

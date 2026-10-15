@@ -26,7 +26,7 @@ final class Views {
         }
         m.put("createdAt", s.createdAt());
         m.put("chainFormat", s.chainFormat().id());
-        m.put("links", Map.of("log", "/sessions/" + s.sessionId() + "/log", "rolls", "/sessions/" + s.sessionId() + "/rolls"));
+        m.put("links", Map.of("log", "/api/sessions/" + s.sessionId() + "/log", "rolls", "/api/sessions/" + s.sessionId() + "/rolls"));
         return m;
     }
 
@@ -125,8 +125,8 @@ final class Views {
 
     private static Map<String, Object> links(String rollId) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("self", "/rolls/" + rollId);
-        m.put("proof", "/rolls/" + rollId + "/proof");
+        m.put("self", "/api/rolls/" + rollId);
+        m.put("proof", "/api/rolls/" + rollId + "/proof");
         m.put("page", "/r/" + rollId);
         return m;
     }

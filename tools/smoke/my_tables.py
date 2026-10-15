@@ -5,6 +5,7 @@ Uso: python3 tools/smoke/my_tables.py BASE ARQUIVO_CHAVES   (o arquivo vem de pa
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import urllib.request
@@ -26,8 +27,9 @@ def main(argv: list[str]) -> int:
     signature = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(keys["sk"])).sign(message.encode("utf-8")).hex()
     auth = {"publicKey": keys["publicKey"], "identityKey": keys["identityKey"], "links": keys["links"], "at": at,
             "signature": signature}
-    req = urllib.request.Request(base + "/me/tables", data=json.dumps({"auth": auth, "action": "list"}).encode("utf-8"),
-                                 method="POST", headers={"content-type": "application/json"})
+    data = json.dumps({"auth": auth, "action": "list"}).encode("utf-8")
+    req = urllib.request.Request(base + "/api/me/tables", data=data, method="POST", headers={
+        "content-type": "application/json", "x-amz-content-sha256": hashlib.sha256(data).hexdigest()})
     with urllib.request.urlopen(req, timeout=15) as resp:
         for table in json.loads(resp.read())["tables"]:
             print(table["sessionId"])

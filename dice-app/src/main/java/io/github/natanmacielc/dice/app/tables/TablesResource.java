@@ -14,7 +14,7 @@ import java.util.Map;
  * Lista de mesas do jogador (spec/ALGORITHM.md, seção 7.8). POST porque todo pedido vai assinado no
  * corpo: {@code {auth, action, sessionId?, cursor?}}, com action list, add ou remove.
  */
-@Path("/me/tables")
+@Path("/api/me/tables")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class TablesResource {

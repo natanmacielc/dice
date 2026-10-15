@@ -258,13 +258,13 @@ A verificação segue esta ordem, e o primeiro erro encontrado é o reportado:
 7. **Resultado.** O resultado recalculado com a dice-v1 (seção 4), usando `REQUEST.clientSeed`, `REQUEST.nonce`, `REQUEST.expression` e `ROUND.randomness`, é igual a `dice`, `modifier` e `total` do RESULT. Erro: `PROOF_RESULT_MISMATCH`.
 8. **Resumos.** `beacon` e `roll` batem campo a campo com as entradas. Erro: `PROOF_SUMMARY_MISMATCH`.
 
-Para verificar a mesa inteira, e não só um roll, aplique a seção 6.4 ao log completo desde o seq 1, que o servidor expõe em `GET /sessions/{id}/log`.
+Para verificar a mesa inteira, e não só um roll, aplique a seção 6.4 ao log completo desde o seq 1, que o servidor expõe em `GET /api/sessions/{id}/log`.
 
 ## 7. Cadeia com identidade do jogador (chain-v2)
 
 A chain-v2 é a chain-v1 com uma diferença: todo REQUEST traz o `player`, assinado pelo aparelho de quem pediu o roll e ligado à identidade do jogador. Assim ninguém, nem o servidor, consegue atribuir um roll a outro jogador, trocar o apelido ou a seed depois do pedido, nem reaproveitar um pedido assinado. A conta do resultado continua sendo a `dice-v1` (seção 4), e hash, encadeamento e JSON canônico são os da seção 6.
 
-Cada mesa tem um formato só, fixado na criação. Mesas novas são chain-v2. As mesas chain-v1 continuam legíveis e verificáveis, mas não aceitam rolls novos. O log (`GET /sessions/{id}/log`) informa o `chainFormat` da mesa.
+Cada mesa tem um formato só, fixado na criação. Mesas novas são chain-v2. As mesas chain-v1 continuam legíveis e verificáveis, mas não aceitam rolls novos. O log (`GET /api/sessions/{id}/log`) informa o `chainFormat` da mesa.
 
 ### 7.1 Chaves, aparelhos e identidade
 
@@ -349,9 +349,9 @@ Em `test-vectors.json`: `playerSignatureVectors` (inclui os vetores TEST 1 e TES
 
 Como um aparelho novo ganha o vínculo. Não faz parte da verificação: a cadeia de vínculos se sustenta sozinha. O servidor só repassa dados públicos, e os itens expiram em 10 minutos.
 
-1. O aparelho **A**, que já rola com a identidade, sorteia um segredo `S` de 16 bytes, cria o pareamento (`POST /pairings`, devolve `pairingId`) e mostra o link `/#parear={pairingId}.{hex(S)}` em QR. O fragmento depois de `#` nunca é enviado ao servidor.
-2. O aparelho **B** abre o link e registra a chave dele: `POST /pairings/{id}/device {deviceKey, mac}`, com `mac = hex(HMAC-SHA256(S, utf8("dice-pair-v1|device|" + id + "|" + deviceKey)))`.
-3. **A** lê o pareamento (`GET /pairings/{id}`) e confere o `mac`: se o servidor trocasse a chave de B pela dele, o MAC não fecharia. Então A assina o vínculo de `deviceKey`, acrescenta-o aos vínculos dele e envia `POST /pairings/{id}/identity {identityKey, links, name, mac}`, com `mac = hex(HMAC-SHA256(S, utf8("dice-pair-v1|identity|" + id + "|" + canonical({identityKey, links, name}))))`. O servidor recusa vínculos que não terminem no `deviceKey` registrado.
+1. O aparelho **A**, que já rola com a identidade, sorteia um segredo `S` de 16 bytes, cria o pareamento (`POST /api/pairings`, devolve `pairingId`) e mostra o link `/#parear={pairingId}.{hex(S)}` em QR. O fragmento depois de `#` nunca é enviado ao servidor.
+2. O aparelho **B** abre o link e registra a chave dele: `POST /api/pairings/{id}/device {deviceKey, mac}`, com `mac = hex(HMAC-SHA256(S, utf8("dice-pair-v1|device|" + id + "|" + deviceKey)))`.
+3. **A** lê o pareamento (`GET /api/pairings/{id}`) e confere o `mac`: se o servidor trocasse a chave de B pela dele, o MAC não fecharia. Então A assina o vínculo de `deviceKey`, acrescenta-o aos vínculos dele e envia `POST /api/pairings/{id}/identity {identityKey, links, name, mac}`, com `mac = hex(HMAC-SHA256(S, utf8("dice-pair-v1|identity|" + id + "|" + canonical({identityKey, links, name}))))`. O servidor recusa vínculos que não terminem no `deviceKey` registrado.
 4. **B** lê o pacote, confere o `mac` e a cadeia de vínculos até a própria chave, mostra quem vai virar (apelido e impressão) e, se o jogador confirmar, passa a assinar com `identityKey` e `links`.
 
 Cada etapa só pode ser feita uma vez por pareamento.
@@ -360,7 +360,7 @@ Cada etapa só pode ser feita uma vez por pareamento.
 
 Para navegar entre mesas sem decorar IDs, o servidor guarda, por identidade, as mesas em que o jogador rolou ou entrou. A lista não participa da verificação e não sustenta confiança nenhuma: é só um índice. Como o ID da mesa é o que dá acesso a ela, todo pedido à lista vai assinado, senão quem visse sua chave no log de uma mesa poderia listar as outras.
 
-`POST /me/tables` com `{auth, action, sessionId?, cursor?}`:
+`POST /api/me/tables` com `{auth, action, sessionId?, cursor?}`:
 
 - `action`: `list` (página de 20, mais recentes primeiro, com `next` como cursor), `add` (entrar numa mesa sem rolar; a mesa tem de existir) ou `remove` (tirar da lista; rolar de novo a traz de volta). Rolar numa mesa também a põe na lista.
 - `auth`: `{publicKey, identityKey, links, at, signature}`. O aparelho (`publicKey`) assina os bytes UTF-8 do JSON canônico de `{"action", "at", "context": "dice-tables-v1", "cursor"?, "identityKey", "sessionId"?}` (campos ausentes ficam de fora). `at` é o instante do pedido no formato de `requestedAt` (seção 6.2), aceito a até 5 minutos do relógio do servidor. Os vínculos seguem a seção 7.2.
