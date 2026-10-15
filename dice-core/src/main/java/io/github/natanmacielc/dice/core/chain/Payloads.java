@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/** Payloads das entradas REQUEST, ROUND e RESULT (spec/ALGORITHM.md, seção 6.2). */
+/** Payloads das entradas REQUEST, ROUND e RESULT (spec/ALGORITHM.md, seções 6.2 e 7.2). */
 public final class Payloads {
 
     private static final DateTimeFormatter INSTANT =
@@ -23,6 +23,13 @@ public final class Payloads {
 
     public static Map<String, Object> request(long seq, String sessionId, String rollId, String clientSeed,
                                               String expression, long nonce, long targetRound, Instant requestedAt) {
+        return request(seq, sessionId, rollId, clientSeed, expression, nonce, targetRound, requestedAt, null);
+    }
+
+    /** REQUEST da chain-v2 quando {@code player} não é null (seção 7.2); sem player, o da chain-v1. */
+    public static Map<String, Object> request(long seq, String sessionId, String rollId, String clientSeed,
+                                              String expression, long nonce, long targetRound, Instant requestedAt,
+                                              Player player) {
         Map<String, Object> m = base(seq, sessionId, rollId);
         m.put("algorithm", DiceRoller.ALGORITHM);
         m.put("drandChainHash", Quicknet.CHAIN_HASH);
@@ -31,6 +38,9 @@ public final class Payloads {
         m.put("nonce", nonce);
         m.put("targetRound", targetRound);
         m.put("requestedAt", formatInstant(requestedAt));
+        if (player != null) {
+            m.put("player", player.toPayload());
+        }
         return m;
     }
 

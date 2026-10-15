@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Verificação da prova de um roll (spec/ALGORITHM.md, seção 6.5). Recebe a árvore JSON genérica
+ * Verificação da prova de um roll (spec/ALGORITHM.md, seções 6.5 e 7.4). Recebe a árvore JSON genérica
  * (Map, List, String, Integer/Long), para o núcleo não depender de um parser JSON.
  */
 public final class ProofVerifier {
@@ -37,7 +37,8 @@ public final class ProofVerifier {
     private static void check(Map<String, Object> proof) {
         // 1. Cabeçalho.
         Object drand = proof.get("drand");
-        if (!DiceRoller.ALGORITHM.equals(proof.get("algorithm")) || !"chain-v1".equals(proof.get("chainFormat"))
+        ChainFormat format = ChainFormat.fromId(proof.get("chainFormat"));
+        if (!DiceRoller.ALGORITHM.equals(proof.get("algorithm")) || format == null
                 || !(drand instanceof Map<?, ?> d) || !Quicknet.NETWORK.equals(d.get("network"))
                 || !Quicknet.CHAIN_HASH.equals(d.get("chainHash"))
                 || !(proof.get("entries") instanceof List<?> rawEntries) || rawEntries.isEmpty()) {
@@ -48,7 +49,7 @@ public final class ProofVerifier {
         Object firstRaw = rawEntries.get(0);
         Object firstPrev = firstRaw instanceof Map<?, ?> fm ? fm.get("prevHash") : null;
         List<ChainEntry> entries = ChainVerifier.parseAndCheck(rawEntries,
-                firstPrev instanceof String s ? s : ChainEntry.GENESIS_PREV_HASH);
+                firstPrev instanceof String s ? s : ChainEntry.GENESIS_PREV_HASH, format);
 
         // 3. Forma da prova.
         ChainEntry request = entries.get(0);
@@ -162,6 +163,9 @@ public final class ProofVerifier {
         compare(b, rnd, BEACON_SUMMARY);
         compare(r, req, ROLL_SUMMARY_FROM_REQUEST);
         compare(r, res, ROLL_SUMMARY_FROM_RESULT);
+        if (format == ChainFormat.CHAIN_V2) {
+            compare(r, req, List.of("player"));
+        }
     }
 
     private static void compare(Map<?, ?> summary, Map<String, Object> source, List<String> fields) {

@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.natanmacielc.dice.core.chain.CanonicalJson;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
 import io.github.natanmacielc.dice.core.chain.ChainVerification;
 import io.github.natanmacielc.dice.core.chain.ChainVerifier;
+import io.github.natanmacielc.dice.core.chain.Player;
 import io.github.natanmacielc.dice.core.chain.ProofVerifier;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -98,6 +100,53 @@ class TestVectorsTest {
     @TestFactory
     Stream<DynamicTest> proofVectors() {
         return stream("proofVectors").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> proof = (Map<String, Object>) tree(v.get("proof"));
+            assertOutcome(v, ProofVerifier.verify(proof));
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> playerSignatureVectors() {
+        return stream("playerSignatureVectors").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
+            byte[] message = HexFormat.of().parseHex(v.get("messageHex").asText());
+            JsonNode req = v.get("request");
+            if (req != null) {
+                byte[] built = Player.message(req.get("sessionId").asText(), req.get("clientSeed").asText(),
+                        req.get("expression").asText(), req.get("identityKey").asText(), req.get("name").asText(),
+                        req.get("requestId").asText());
+                assertEquals(v.get("message").asText(), new String(built, StandardCharsets.UTF_8));
+                assertEquals(v.get("messageHex").asText(), HexFormat.of().formatHex(built));
+            }
+            assertEquals(v.get("valid").asBoolean(),
+                    Player.verify(v.get("publicKey").asText(), message, v.get("signature").asText()));
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> linkSignatureVectors() {
+        return stream("linkSignatureVectors").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
+            byte[] built = Player.linkMessage(v.get("link").get("identityKey").asText(),
+                    v.get("link").get("deviceKey").asText());
+            assertEquals(v.get("message").asText(), new String(built, StandardCharsets.UTF_8));
+            assertEquals(v.get("messageHex").asText(), HexFormat.of().formatHex(built));
+            assertEquals(v.get("valid").asBoolean(),
+                    Player.verify(v.get("issuerKey").asText(), built, v.get("signature").asText()));
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> logVectorsV2() {
+        return stream("logVectorsV2").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
+            ChainVerification result = ChainVerifier.verifySegmentJson((List<?>) tree(v.get("entries")),
+                    v.get("prevHashOfFirst").asText(), ChainFormat.CHAIN_V2);
+            assertOutcome(v, result);
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> proofVectorsV2() {
+        return stream("proofVectorsV2").map(v -> DynamicTest.dynamicTest(v.get("id").asText(), () -> {
             @SuppressWarnings("unchecked")
             Map<String, Object> proof = (Map<String, Object>) tree(v.get("proof"));
             assertOutcome(v, ProofVerifier.verify(proof));

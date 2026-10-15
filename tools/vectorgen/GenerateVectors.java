@@ -6,10 +6,12 @@ import io.github.natanmacielc.dice.core.Quicknet;
 import io.github.natanmacielc.dice.core.RollResult;
 import io.github.natanmacielc.dice.core.chain.CanonicalJson;
 import io.github.natanmacielc.dice.core.chain.ChainEntry;
+import io.github.natanmacielc.dice.core.chain.ChainFormat;
 import io.github.natanmacielc.dice.core.chain.ChainVerification;
 import io.github.natanmacielc.dice.core.chain.ChainVerifier;
 import io.github.natanmacielc.dice.core.chain.EntryType;
 import io.github.natanmacielc.dice.core.chain.Payloads;
+import io.github.natanmacielc.dice.core.chain.Player;
 import io.github.natanmacielc.dice.core.chain.ProofVerifier;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -148,6 +150,7 @@ public class GenerateVectors {
         root.put("rollVectors", rolls);
         root.put("errorVectors", errors);
         ChainVectors.generate(root);
+        ChainV2Vectors.generate(root);
         Files.writeString(Path.of(args[0]), toJson(root, "") + "\n", StandardCharsets.US_ASCII);
         System.out.printf("beacon=%d roll=%d error=%d%n", beacon.size(), rolls.size(), errors.size());
     }
@@ -251,7 +254,11 @@ public class GenerateVectors {
             }
 
             void request(String rollId, String seed, String expr, long nonce, long target, Instant at) {
-                add(EntryType.REQUEST, Payloads.request(next(), sessionId, rollId, seed, expr, nonce, target, at));
+                request(rollId, seed, expr, nonce, target, at, null);
+            }
+
+            void request(String rollId, String seed, String expr, long nonce, long target, Instant at, Player player) {
+                add(EntryType.REQUEST, Payloads.request(next(), sessionId, rollId, seed, expr, nonce, target, at, player));
             }
 
             void round(String rollId, long round, String randomness, String signature) {
@@ -565,6 +572,410 @@ public class GenerateVectors {
             if (!java.util.Objects.equals(got, error)) {
                 throw new IllegalStateException(id + ": esperado " + error + ", veio " + got + " (" + v.message() + ")");
             }
+        }
+    }
+
+    /** Vetores da chain-v2 (spec/ALGORITHM.md, seção 7): player assinado com Ed25519 no REQUEST. */
+    static final class ChainV2Vectors {
+
+        // Chaves determinísticas do RFC 8032 (seção 7.1): TEST 1, 2, 3 e 1024. Nunca chaves de jogador.
+        static final String SK_ANA = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
+        static final String PK_ANA = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a";
+        static final String SK_THORIN = "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb";
+        static final String PK_THORIN = "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c";
+        static final String SK_PHONE = "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7";
+        static final String PK_PHONE = "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025";
+        static final String SK_TABLET = "f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5";
+        static final String PK_TABLET = "278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e";
+        static final String RFC_SIG_1 = "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065"
+                + "224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b";
+        static final String RFC_SIG_2 = "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da"
+                + "085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00";
+
+        // O celular da Ana foi vinculado pela identidade; o tablet, pelo celular.
+        static final Player.Link LINK_PHONE = Player.link(SK_ANA, PK_ANA, PK_PHONE);
+        static final Player.Link LINK_TABLET = Player.link(SK_PHONE, PK_ANA, PK_TABLET);
+
+        static final String SESSION = ChainVectors.SESSION;
+        static final String ROLL_A = ChainVectors.ROLL_A;
+        static final String ROLL_B = ChainVectors.ROLL_B;
+        static final String ROLL_C = ChainVectors.ROLL_C;
+        static final String ROLL_D = "d2e3f4g5h6j7k8m9";
+        static final String ROLL_E = "e3f4g5h6j7k8m9n0";
+        static final String REQ_A = "6a1f0c3e9b2d4a5f8e7c6b5a49382716";
+        static final String REQ_B = "0f1e2d3c4b5a69788796a5b4c3d2e1f0";
+        static final String REQ_C = "c3a5e7092b4d6f8a1c3e5a7b9d0f2a4c";
+        static final String REQ_D = "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b";
+        static final String THORIN = "Thorin 🪓";
+
+        static final List<Map<String, Object>> signatures = new ArrayList<>();
+        static final List<Map<String, Object>> linkSignatures = new ArrayList<>();
+        static final List<Map<String, Object>> logs = new ArrayList<>();
+        static final List<Map<String, Object>> proofs = new ArrayList<>();
+
+        static void generate(Map<String, Object> root) {
+            signatureVectors();
+            linkVectors();
+            ChainVectors.Chain session = sessionChain();
+            logVectors(session);
+            proofVectors(session);
+            root.put("playerSignatureVectors", signatures);
+            root.put("linkSignatureVectors", linkSignatures);
+            root.put("logVectorsV2", logs);
+            root.put("proofVectorsV2", proofs);
+            System.out.printf("playerSignature=%d linkSignature=%d logV2=%d proofV2=%d%n", signatures.size(),
+                    linkSignatures.size(), logs.size(), proofs.size());
+        }
+
+        /** Ana no computador: o aparelho é a própria identidade. */
+        static Player ana(String seed, String expr, String requestId) {
+            return Player.sign(SK_ANA, PK_ANA, SESSION, seed, expr, "Ana", requestId);
+        }
+
+        static Player anaPhone(String seed, String expr, String requestId) {
+            return Player.sign(SK_PHONE, PK_PHONE, PK_ANA, List.of(LINK_PHONE), SESSION, seed, expr, "Ana", requestId);
+        }
+
+        static Player anaTablet(String seed, String expr, String requestId) {
+            return Player.sign(SK_TABLET, PK_TABLET, PK_ANA, List.of(LINK_PHONE, LINK_TABLET), SESSION, seed, expr,
+                    "Ana", requestId);
+        }
+
+        static Player thorin(String seed, String expr, String requestId) {
+            return Player.sign(SK_THORIN, PK_THORIN, SESSION, seed, expr, THORIN, requestId);
+        }
+
+        static String flipLastHex(String hex) {
+            char last = hex.charAt(hex.length() - 1);
+            return hex.substring(0, hex.length() - 1) + (last == '0' ? '1' : '0');
+        }
+
+        // ---------- Assinaturas ----------
+
+        static void signatureVectors() {
+            signature("rfc8032-test-1", "RFC 8032, TEST 1: mensagem vazia", PK_ANA, new byte[0], RFC_SIG_1, null, true);
+            signature("rfc8032-test-2", "RFC 8032, TEST 2: mensagem 0x72", PK_THORIN, new byte[] {0x72}, RFC_SIG_2, null,
+                    true);
+            String seed = "mesa|\"dragão\"";
+            Map<String, Object> req = request(SESSION, seed, "2d6+3", PK_THORIN, THORIN, REQ_B);
+            Player p = thorin(seed, "2d6+3", REQ_B);
+            byte[] message = Player.message(SESSION, seed, "2d6+3", PK_THORIN, THORIN, REQ_B);
+            signature("request-valid", "pedido assinado; a mensagem é o JSON canônico do pedido", PK_THORIN,
+                    message, p.signature(), req, true);
+            signature("request-bit-flipped", "último hex da assinatura trocado", PK_THORIN, message,
+                    flipLastHex(p.signature()), req, false);
+            signature("request-other-key", "assinatura válida, mas conferida com a chave de outro jogador", PK_ANA,
+                    message, p.signature(), req, false);
+            Map<String, Object> phoneReq = request(SESSION, "s", "1d20", PK_ANA, "Ana", REQ_C);
+            byte[] phoneMessage = Player.message(SESSION, "s", "1d20", PK_ANA, "Ana", REQ_C);
+            signature("request-linked-device", "pedido do celular da Ana: assina o aparelho, a identidade entra na "
+                    + "mensagem", PK_PHONE, phoneMessage, anaPhone("s", "1d20", REQ_C).signature(), phoneReq, true);
+        }
+
+        static Map<String, Object> request(String sessionId, String seed, String expr, String identityKey, String name,
+                                           String requestId) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("sessionId", sessionId);
+            m.put("clientSeed", seed);
+            m.put("expression", expr);
+            m.put("identityKey", identityKey);
+            m.put("name", name);
+            m.put("requestId", requestId);
+            return m;
+        }
+
+        static void signature(String id, String description, String publicKey, byte[] message, String sig,
+                              Map<String, Object> request, boolean valid) {
+            if (Player.verify(publicKey, message, sig) != valid) {
+                throw new IllegalStateException(id + ": verificação diferente do esperado");
+            }
+            Map<String, Object> v = new LinkedHashMap<>();
+            v.put("id", id);
+            v.put("description", description);
+            if (request != null) {
+                v.put("request", request);
+                v.put("message", new String(message, StandardCharsets.UTF_8));
+            }
+            v.put("messageHex", HexFormat.of().formatHex(message));
+            v.put("publicKey", publicKey);
+            v.put("signature", sig);
+            v.put("valid", valid);
+            signatures.add(v);
+        }
+
+        static void linkVectors() {
+            link("link-identity-to-phone", "a identidade da Ana vincula o celular", PK_ANA, PK_ANA, PK_PHONE,
+                    LINK_PHONE.signature(), true);
+            link("link-phone-to-tablet", "o celular, já vinculado, vincula o tablet", PK_PHONE, PK_ANA, PK_TABLET,
+                    LINK_TABLET.signature(), true);
+            link("link-other-identity", "o mesmo vínculo conferido para outra identidade", PK_ANA, PK_THORIN,
+                    PK_PHONE, LINK_PHONE.signature(), false);
+        }
+
+        static void link(String id, String description, String issuer, String identityKey, String deviceKey,
+                         String sig, boolean valid) {
+            byte[] message = Player.linkMessage(identityKey, deviceKey);
+            if (Player.verify(issuer, message, sig) != valid) {
+                throw new IllegalStateException(id + ": verificação diferente do esperado");
+            }
+            Map<String, Object> v = new LinkedHashMap<>();
+            v.put("id", id);
+            v.put("description", description);
+            Map<String, Object> l = new LinkedHashMap<>();
+            l.put("identityKey", identityKey);
+            l.put("deviceKey", deviceKey);
+            v.put("link", l);
+            v.put("message", new String(message, StandardCharsets.UTF_8));
+            v.put("messageHex", HexFormat.of().formatHex(message));
+            v.put("issuerKey", issuer);
+            v.put("signature", sig);
+            v.put("valid", valid);
+            linkSignatures.add(v);
+        }
+
+        // ---------- Cadeia ----------
+
+        /**
+         * Mesma mesa da chain-v1: Ana rola A no computador, Thorin rola B, Ana rola C no celular (1 vínculo)
+         * e D no tablet (2 vínculos). C e D usam o mesmo round alvo.
+         */
+        static ChainVectors.Chain sessionChain() {
+            ChainVectors.Chain c = new ChainVectors.Chain(SESSION);
+            c.request(ROLL_A, "mesa-do-dragão", "2d6+3", 1, 1_000_000, ChainVectors.before(1_000_000, 4500),
+                    ana("mesa-do-dragão", "2d6+3", REQ_A));
+            c.request(ROLL_B, THORIN, "1d20+5", 2, 1_000_001, ChainVectors.before(1_000_001, 5250),
+                    thorin(THORIN, "1d20+5", REQ_B));
+            c.round(ROLL_A, 1_000_000, R1M, S1M);
+            c.result(ROLL_A, DiceRoller.roll(R1M, "mesa-do-dragão", 1, "2d6+3"));
+            c.round(ROLL_B, 1_000_001, ChainVectors.R1M1, ChainVectors.S1M1);
+            c.result(ROLL_B, DiceRoller.roll(ChainVectors.R1M1, THORIN, 2, "1d20+5"));
+            c.request(ROLL_C, "c|\"aspas\"", "4d6-1", 3, 1_000_002, ChainVectors.before(1_000_002, 3001),
+                    anaPhone("c|\"aspas\"", "4d6-1", REQ_C));
+            c.round(ROLL_C, 1_000_002, ChainVectors.R1M2, ChainVectors.S1M2);
+            c.result(ROLL_C, DiceRoller.roll(ChainVectors.R1M2, "c|\"aspas\"", 3, "4d6-1"));
+            c.request(ROLL_D, "tablet", "1d100", 4, 1_000_003, ChainVectors.before(1_000_003, 3500),
+                    anaTablet("tablet", "1d100", REQ_D));
+            return c;
+        }
+
+        @SuppressWarnings("unchecked")
+        static Map<String, Object> playerAt(List<Object> entries, int i) {
+            return (Map<String, Object>) ChainVectors.payloadAt(entries, i).get("player");
+        }
+
+        @SuppressWarnings("unchecked")
+        static List<Object> linksAt(List<Object> entries, int i) {
+            return (List<Object>) playerAt(entries, i).get("links");
+        }
+
+        /** Troca o player do REQUEST i e refaz os hashes dali em diante. */
+        static List<Object> withPlayer(ChainVectors.Chain c, int i, Player player) {
+            List<Object> entries = ChainVectors.json(c.entries);
+            ChainVectors.payloadAt(entries, i).put("player", ChainVectors.deepCopy(player.toPayload()));
+            ChainVectors.relink(entries, i);
+            return entries;
+        }
+
+        static void logVectors(ChainVectors.Chain c) {
+            String genesis = ChainEntry.GENESIS_PREV_HASH;
+            List<Object> full = ChainVectors.json(c.entries);
+            log("log-v2-valid-full", "mesa inteira: computador, outro jogador, celular e tablet vinculados", genesis,
+                    full, null);
+            log("log-v2-valid-middle", "segmento do meio com o hash anterior conhecido", c.entries.get(2).hash(),
+                    ChainVectors.json(c.entries.subList(3, 10)), null);
+
+            List<Object> flipped = ChainVectors.json(c.entries);
+            playerAt(flipped, 0).put("signature", flipLastHex((String) playerAt(flipped, 0).get("signature")));
+            ChainVectors.relink(flipped, 0);
+            log("log-v2-signature-flipped", "assinatura do REQUEST com um hex trocado (hashes refeitos)", genesis, flipped,
+                    "CHAIN_PLAYER_SIGNATURE");
+
+            List<Object> renamed = ChainVectors.json(c.entries);
+            playerAt(renamed, 0).put("name", "Thorin");
+            ChainVectors.relink(renamed, 0);
+            log("log-v2-name-swapped", "apelido trocado depois da assinatura", genesis, renamed, "CHAIN_PLAYER_SIGNATURE");
+
+            List<Object> impersonated = ChainVectors.json(c.entries);
+            playerAt(impersonated, 0).put("publicKey", PK_THORIN);
+            playerAt(impersonated, 0).put("identityKey", PK_THORIN);
+            ChainVectors.relink(impersonated, 0);
+            log("log-v2-key-swapped", "roll de Ana atribuído à chave de Thorin", genesis, impersonated,
+                    "CHAIN_PLAYER_SIGNATURE");
+
+            List<Object> reseeded = ChainVectors.json(c.entries);
+            ChainVectors.payloadAt(reseeded, 0).put("clientSeed", "outra-seed");
+            ChainVectors.relink(reseeded, 0);
+            log("log-v2-seed-rewritten", "servidor trocou a seed assinada", genesis, reseeded, "CHAIN_PLAYER_SIGNATURE");
+
+            List<Object> linkFlipped = ChainVectors.json(c.entries);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> link = (Map<String, Object>) linksAt(linkFlipped, 6).get(0);
+            link.put("signature", flipLastHex((String) link.get("signature")));
+            ChainVectors.relink(linkFlipped, 6);
+            log("log-v2-link-flipped", "vínculo do celular com um hex trocado", genesis, linkFlipped,
+                    "CHAIN_PLAYER_SIGNATURE");
+
+            Player phone = anaPhone("c|\"aspas\"", "4d6-1", REQ_C);
+            log("log-v2-link-other-identity", "vínculo da Ana apresentado como de outra identidade", genesis,
+                    withPlayer(c, 6, new Player(phone.publicKey(), phone.name(), phone.requestId(), phone.signature(),
+                            PK_THORIN, phone.links())), "CHAIN_PLAYER_SIGNATURE");
+            log("log-v2-reattributed", "Thorin vincula o celular da Ana a si e toma o pedido: os vínculos fecham, "
+                    + "mas a assinatura do pedido cobre a identidade", genesis,
+                    withPlayer(c, 6, new Player(phone.publicKey(), phone.name(), phone.requestId(), phone.signature(),
+                            PK_THORIN, List.of(Player.link(SK_THORIN, PK_THORIN, PK_PHONE)))), "CHAIN_PLAYER_SIGNATURE");
+            Player tablet = anaTablet("tablet", "1d100", REQ_D);
+            log("log-v2-links-short", "cadeia de vínculos que para no celular, sem chegar ao tablet", genesis,
+                    withPlayer(c, 9, new Player(tablet.publicKey(), tablet.name(), tablet.requestId(), tablet.signature(),
+                            PK_ANA, List.of(LINK_PHONE))), "CHAIN_PLAYER_SIGNATURE");
+            Player desk = ana("mesa-do-dragão", "2d6+3", REQ_A);
+            log("log-v2-identity-without-links", "identidade diferente da chave do aparelho e nenhum vínculo", genesis,
+                    withPlayer(c, 0, new Player(desk.publicKey(), desk.name(), desk.requestId(), desk.signature(),
+                            PK_THORIN, List.of())), "CHAIN_PLAYER_SIGNATURE");
+
+            ChainVectors.Chain replay = sessionChain();
+            replay.request(ROLL_E, "mesa-do-dragão", "2d6+3", 5, 1_000_005, ChainVectors.before(1_000_005, 4000),
+                    ana("mesa-do-dragão", "2d6+3", REQ_A));
+            log("log-v2-replay", "pedido assinado de Ana reaproveitado num roll novo", genesis,
+                    ChainVectors.json(replay.entries), "CHAIN_REQUEST_REPLAY");
+
+            List<Object> missing = ChainVectors.json(c.entries);
+            ChainVectors.payloadAt(missing, 0).remove("player");
+            ChainVectors.relink(missing, 0);
+            log("log-v2-missing-player", "REQUEST sem player", genesis, missing, "CHAIN_STRUCTURE");
+
+            List<Object> extra = ChainVectors.json(c.entries);
+            playerAt(extra, 0).put("role", "mestre");
+            ChainVectors.relink(extra, 0);
+            log("log-v2-player-extra-field", "player com campo a mais", genesis, extra, "CHAIN_STRUCTURE");
+
+            List<Object> noLinks = ChainVectors.json(c.entries);
+            playerAt(noLinks, 0).remove("links");
+            ChainVectors.relink(noLinks, 0);
+            log("log-v2-player-without-links", "player sem o campo links", genesis, noLinks, "CHAIN_STRUCTURE");
+
+            List<Object> linkExtra = ChainVectors.json(c.entries);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> extraLink = (Map<String, Object>) linksAt(linkExtra, 6).get(0);
+            extraLink.put("issuerKey", PK_ANA);
+            ChainVectors.relink(linkExtra, 6);
+            log("log-v2-link-extra-field", "vínculo com campo a mais", genesis, linkExtra, "CHAIN_STRUCTURE");
+
+            List<Player.Link> nine = new ArrayList<>(java.util.Collections.nCopies(9, LINK_PHONE));
+            log("log-v2-too-many-links", "nove vínculos (o máximo é oito)", genesis,
+                    withPlayer(c, 6, new Player(phone.publicKey(), phone.name(), phone.requestId(), phone.signature(),
+                            PK_ANA, nine)), "CHAIN_STRUCTURE");
+
+            List<Object> upper = ChainVectors.json(c.entries);
+            playerAt(upper, 0).put("publicKey", PK_ANA.toUpperCase());
+            ChainVectors.relink(upper, 0);
+            log("log-v2-uppercase-key", "chave pública em hex maiúsculo", genesis, upper, "CHAIN_STRUCTURE");
+
+            ChainVectors.Chain longName = new ChainVectors.Chain(SESSION);
+            longName.request(ROLL_A, "s", "1d20", 1, 1_000_000, ChainVectors.before(1_000_000, 4500),
+                    Player.sign(SK_ANA, PK_ANA, SESSION, "s", "1d20", "a".repeat(33), REQ_A));
+            log("log-v2-name-too-long", "apelido com 33 bytes, mesmo assinado", genesis,
+                    ChainVectors.json(longName.entries), "CHAIN_STRUCTURE");
+        }
+
+        static void log(String id, String description, String prevHashOfFirst, List<Object> entries, String error) {
+            ChainVerification v = ChainVerifier.verifySegmentJson(entries, prevHashOfFirst, ChainFormat.CHAIN_V2);
+            ChainVectors.check(id, v, error);
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("id", id);
+            out.put("description", description);
+            out.put("prevHashOfFirst", prevHashOfFirst);
+            out.put("entries", entries);
+            out.put("valid", error == null);
+            if (error != null) {
+                out.put("error", error);
+            }
+            logs.add(out);
+        }
+
+        // ---------- Prova ----------
+
+        @SuppressWarnings("unchecked")
+        static Map<String, Object> proof(List<Object> entries) {
+            Map<String, Object> p = ChainVectors.proof(entries);
+            p.put("chainFormat", "chain-v2");
+            Object player = ChainVectors.payloadAt(entries, 0).get("player");
+            if (player != null) {
+                ((Map<String, Object>) p.get("roll")).put("player", ChainVectors.deepCopy(player));
+            }
+            return p;
+        }
+
+        /** Roll D (tablet, 2 vínculos) resolvido no round 1000003, que não temos: usa o 1000002 como alvo. */
+        static List<Object> tabletRoll() {
+            ChainVectors.Chain t = new ChainVectors.Chain(SESSION);
+            t.request(ROLL_D, "tablet", "1d100", 1, 1_000_002, ChainVectors.before(1_000_002, 2500),
+                    anaTablet("tablet", "1d100", REQ_D));
+            t.round(ROLL_D, 1_000_002, ChainVectors.R1M2, ChainVectors.S1M2);
+            t.result(ROLL_D, DiceRoller.roll(ChainVectors.R1M2, "tablet", 1, "1d100"));
+            return ChainVectors.json(t.entries);
+        }
+
+        @SuppressWarnings("unchecked")
+        static void proofVectors(ChainVectors.Chain c) {
+            proofVector("proof-v2-valid-interleaved", "roll A de Ana com o REQUEST assinado de Thorin no meio",
+                    proof(ChainVectors.json(c.entries.subList(0, 4))), null);
+            proofVector("proof-v2-valid-linked-phone", "roll C do celular da Ana (1 vínculo)",
+                    proof(ChainVectors.json(c.entries.subList(6, 9))), null);
+            proofVector("proof-v2-valid-linked-tablet", "roll do tablet da Ana (2 vínculos)", proof(tabletRoll()),
+                    null);
+
+            Map<String, Object> renamed = proof(ChainVectors.json(c.entries.subList(6, 9)));
+            ((Map<String, Object>) ((Map<String, Object>) renamed.get("roll")).get("player")).put("name", "Thorin");
+            proofVector("proof-v2-summary-name", "resumo diz que o roll é de Thorin", renamed,
+                    "PROOF_SUMMARY_MISMATCH");
+
+            Map<String, Object> otherIdentity = proof(ChainVectors.json(c.entries.subList(6, 9)));
+            ((Map<String, Object>) ((Map<String, Object>) otherIdentity.get("roll")).get("player"))
+                    .put("identityKey", PK_THORIN);
+            proofVector("proof-v2-summary-identity", "resumo atribui o roll a outra identidade", otherIdentity,
+                    "PROOF_SUMMARY_MISMATCH");
+
+            Map<String, Object> noPlayer = proof(ChainVectors.json(c.entries.subList(6, 9)));
+            ((Map<String, Object>) noPlayer.get("roll")).remove("player");
+            proofVector("proof-v2-summary-missing-player", "resumo sem player", noPlayer, "PROOF_SUMMARY_MISMATCH");
+
+            List<Object> flipped = ChainVectors.json(c.entries.subList(6, 9));
+            playerAt(flipped, 0).put("signature", flipLastHex((String) playerAt(flipped, 0).get("signature")));
+            ChainVectors.relink(flipped, 0);
+            proofVector("proof-v2-signature-flipped", "assinatura inválida no REQUEST (hashes refeitos)",
+                    proof(flipped), "CHAIN_PLAYER_SIGNATURE");
+
+            List<Object> otherSigner = ChainVectors.json(c.entries.subList(0, 4));
+            playerAt(otherSigner, 1).put("name", "Ana");
+            ChainVectors.relink(otherSigner, 1);
+            proofVector("proof-v2-bad-signature-in-middle", "REQUEST de outro roll no meio com assinatura inválida",
+                    proof(otherSigner), "CHAIN_PLAYER_SIGNATURE");
+
+            Map<String, Object> v1Entries = proof(ChainVectors.json(ChainVectors.sessionChain().entries.subList(6, 9)));
+            proofVector("proof-v2-without-player", "entradas da chain-v1 declaradas como chain-v2", v1Entries,
+                    "CHAIN_STRUCTURE");
+
+            Map<String, Object> declaredV1 = ChainVectors.proof(ChainVectors.json(c.entries.subList(6, 9)));
+            proofVector("proof-v2-declared-v1", "entradas v2 numa prova chain-v1: a v1 ignora o player e não "
+                    + "atesta quem rolou", declaredV1, null);
+
+            Map<String, Object> unknown = proof(ChainVectors.json(c.entries.subList(6, 9)));
+            unknown.put("chainFormat", "chain-v3");
+            proofVector("proof-v2-unknown-format", "chainFormat desconhecido", unknown, "PROOF_STRUCTURE");
+        }
+
+        static void proofVector(String id, String description, Map<String, Object> proof, String error) {
+            ChainVerification v = ProofVerifier.verify(proof);
+            ChainVectors.check(id, v, error);
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("id", id);
+            out.put("description", description);
+            out.put("proof", proof);
+            out.put("valid", error == null);
+            if (error != null) {
+                out.put("error", error);
+            }
+            proofs.add(out);
         }
     }
 

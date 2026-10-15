@@ -1,4 +1,4 @@
-# Algoritmo dice-v1
+# Algoritmo dice-v1 (cadeias chain-v1 e chain-v2)
 
 Esta é a fonte da verdade. Os verificadores Java (`dice-core`), JavaScript (`web/verifier/dice-v1.js`) e Python (`tools/verify-py`) implementam exatamente o que está aqui, e todos passam em `spec/test-vectors.json`.
 
@@ -260,6 +260,102 @@ A verificação segue esta ordem, e o primeiro erro encontrado é o reportado:
 
 Para verificar a mesa inteira, e não só um roll, aplique a seção 6.4 ao log completo desde o seq 1, que o servidor expõe em `GET /sessions/{id}/log`.
 
-## 7. Fora da v1 por enquanto
+## 7. Cadeia com identidade do jogador (chain-v2)
+
+A chain-v2 é a chain-v1 com uma diferença: todo REQUEST traz o `player`, assinado pelo aparelho de quem pediu o roll e ligado à identidade do jogador. Assim ninguém, nem o servidor, consegue atribuir um roll a outro jogador, trocar o apelido ou a seed depois do pedido, nem reaproveitar um pedido assinado. A conta do resultado continua sendo a `dice-v1` (seção 4), e hash, encadeamento e JSON canônico são os da seção 6.
+
+Cada mesa tem um formato só, fixado na criação. Mesas novas são chain-v2. As mesas chain-v1 continuam legíveis e verificáveis, mas não aceitam rolls novos. O log (`GET /sessions/{id}/log`) informa o `chainFormat` da mesa.
+
+### 7.1 Chaves, aparelhos e identidade
+
+- Ed25519 (RFC 8032), verificação padrão da biblioteca de cada linguagem (JDK, WebCrypto e pyca/cryptography). Nada de implementação própria.
+- Chaves públicas em 64 hex minúsculos (os 32 bytes crus); assinaturas em 128 hex minúsculos (64 bytes).
+- Cada **aparelho** (navegador) tem a sua chave. A chave privada nasce nele e nunca sai dele; o servidor nunca a vê.
+- A **identidade** do jogador é a chave do primeiro aparelho dele. Outros aparelhos entram por **vínculos**: o primeiro vínculo é assinado pela identidade, e cada vínculo seguinte pelo aparelho do vínculo anterior. Assim qualquer aparelho vinculado pode vincular outro, e o jogador continua sendo um só em todos.
+- Não há revogação nesta versão: um aparelho vinculado rola em nome da identidade enquanto existir.
+
+### 7.2 Payload do REQUEST
+
+Os campos da seção 6.2, mais `player`, um objeto com exatamente estes seis campos:
+
+| campo | regra |
+|---|---|
+| `publicKey` | chave do aparelho que assina o pedido |
+| `name` | apelido: as regras da `clientSeed` (seção 3.2), mas com no máximo **32** bytes UTF-8 |
+| `requestId` | 32 hex minúsculos, sorteados pelo cliente a cada pedido |
+| `signature` | assinatura do aparelho sobre a mensagem do pedido |
+| `identityKey` | chave da identidade do jogador |
+| `links` | lista de 0 a **8** vínculos, cada um um objeto com exatamente `deviceKey` (64 hex) e `signature` (128 hex) |
+
+ROUND e RESULT não mudam.
+
+**Mensagem do pedido.** O aparelho (`publicKey`) assina os bytes UTF-8 do JSON canônico (seção 6.3) deste objeto:
+
+```json
+{"clientSeed": "…", "context": "dice-player-v1", "expression": "…", "identityKey": "…", "name": "…", "requestId": "…", "sessionId": "…"}
+```
+
+`expression` é a forma canônica, a mesma gravada no REQUEST. `context` separa esta assinatura de qualquer outro uso da chave. Nonce, rollId e targetRound ficam de fora porque o servidor só os define depois que o cliente assina; o `requestId` é o que impede reaproveitar a assinatura. A `identityKey` entra na mensagem: sem ela, outro jogador poderia vincular a chave do seu aparelho à identidade dele (um vínculo só exige a assinatura de quem vincula) e tomar seus pedidos (vetor `log-v2-reattributed`).
+
+Exemplo (vetor `request-valid` de `playerSignatureVectors`):
+
+```
+{"clientSeed":"mesa|\"dragão\"","context":"dice-player-v1","expression":"2d6+3","identityKey":"3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c","name":"Thorin 🪓","requestId":"0f1e2d3c4b5a69788796a5b4c3d2e1f0","sessionId":"kq1t9m3x7c2a8z5r"}
+```
+
+**Mensagem do vínculo.** Os bytes UTF-8 do JSON canônico de:
+
+```json
+{"context": "dice-device-v1", "deviceKey": "…", "identityKey": "…"}
+```
+
+Exemplo (vetor `link-identity-to-phone` de `linkSignatureVectors`, assinado pela identidade):
+
+```
+{"context":"dice-device-v1","deviceKey":"fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025","identityKey":"d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"}
+```
+
+**Cadeia de vínculos.** Sem vínculos, `identityKey` tem de ser igual a `publicKey` (o aparelho é a identidade). Com vínculos, o vínculo 0 é assinado pela `identityKey`, o vínculo i pelo `deviceKey` do vínculo i − 1, e o `deviceKey` do último tem de ser a `publicKey`.
+
+### 7.3 Verificação de um segmento
+
+As checagens 1 a 5 da seção 6.4 e, em cada entrada REQUEST, mais estas, na ordem:
+
+6. **Player.** `player` existe e segue a seção 7.2; `sessionId`, `clientSeed` e `expression` do payload são strings. Erro: `CHAIN_STRUCTURE`.
+7. **Vínculos.** A cadeia de vínculos liga a `identityKey` à `publicKey`. Erro: `CHAIN_PLAYER_SIGNATURE`.
+8. **Assinatura.** A assinatura do aparelho vale para a mensagem montada com `sessionId`, `clientSeed` e `expression` do payload e `identityKey`, `name` e `requestId` do `player`. Erro: `CHAIN_PLAYER_SIGNATURE`.
+9. **Replay.** O `requestId` não apareceu em nenhum REQUEST anterior do segmento. Erro: `CHAIN_REQUEST_REPLAY`.
+
+Como na seção 6.4, uma entrada passa por todas as checagens antes da próxima, e o primeiro erro vence. A checagem de replay só cobre o segmento recebido; para cobrir a mesa inteira, verifique o log desde o seq 1.
+
+### 7.4 Prova de um roll
+
+O formato da seção 6.5, com `"chainFormat": "chain-v2"` e o resumo `roll` com mais um campo, `player`, igual ao do REQUEST (inclusive `identityKey` e `links`). A verificação segue a seção 6.5 com duas diferenças:
+
+- no passo 2, o segmento é verificado pela seção 7.3;
+- no passo 8, por último, `roll.player` tem de ser igual ao `player` do REQUEST. Erro: `PROOF_SUMMARY_MISMATCH`.
+
+Um `chainFormat` que não seja `chain-v1` nem `chain-v2` dá `PROOF_STRUCTURE`. Uma prova declarada `chain-v1` ignora o `player`, mesmo que ele exista (vetor `proof-v2-declared-v1`): ela não atesta quem rolou. Quem exibe o jogador deve exigir uma prova `chain-v2` válida.
+
+### 7.5 Impressão da identidade (só exibição)
+
+Para mostrar o jogador, usa-se o apelido com a impressão da **identidade**: os 4 primeiros bytes de SHA-256(bytes da `identityKey`), em hex, com um hífen no meio (`3f9a-c2e1`). É a mesma em todos os aparelhos do jogador. O apelido pode se repetir, e a impressão é o que diferencia os jogadores. A impressão não participa da verificação.
+
+### 7.6 Vetores
+
+Em `test-vectors.json`: `playerSignatureVectors` (inclui os vetores TEST 1 e TEST 2 do RFC 8032, para conferir a biblioteca), `linkSignatureVectors`, `logVectorsV2` (verificados pela seção 7.3) e `proofVectorsV2`. As chaves dos vetores são as dos testes 1, 2, 3 e 1024 do RFC 8032, nunca as de um jogador: Ana (identidade, TEST 1) com celular (TEST 3) e tablet (TEST 1024), e Thorin (TEST 2).
+
+### 7.7 Pareamento de aparelhos (informativo)
+
+Como um aparelho novo ganha o vínculo. Não faz parte da verificação: a cadeia de vínculos se sustenta sozinha. O servidor só repassa dados públicos, e os itens expiram em 10 minutos.
+
+1. O aparelho **A**, que já rola com a identidade, sorteia um segredo `S` de 16 bytes, cria o pareamento (`POST /pairings`, devolve `pairingId`) e mostra o link `/#parear={pairingId}.{hex(S)}` em QR. O fragmento depois de `#` nunca é enviado ao servidor.
+2. O aparelho **B** abre o link e registra a chave dele: `POST /pairings/{id}/device {deviceKey, mac}`, com `mac = hex(HMAC-SHA256(S, utf8("dice-pair-v1|device|" + id + "|" + deviceKey)))`.
+3. **A** lê o pareamento (`GET /pairings/{id}`) e confere o `mac`: se o servidor trocasse a chave de B pela dele, o MAC não fecharia. Então A assina o vínculo de `deviceKey`, acrescenta-o aos vínculos dele e envia `POST /pairings/{id}/identity {identityKey, links, name, mac}`, com `mac = hex(HMAC-SHA256(S, utf8("dice-pair-v1|identity|" + id + "|" + canonical({identityKey, links, name}))))`. O servidor recusa vínculos que não terminem no `deviceKey` registrado.
+4. **B** lê o pacote, confere o `mac` e a cadeia de vínculos até a própria chave, mostra quem vai virar (apelido e impressão) e, se o jogador confirmar, passa a assinar com `identityKey` e `links`.
+
+Cada etapa só pode ser feita uma vez por pareamento.
+
+## 8. Fora das versões atuais por enquanto
 
 - Verificação BLS da assinatura: só no verificador do navegador (Fase 4).
