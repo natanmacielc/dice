@@ -26,7 +26,7 @@ Os avisos de licença ficam no fim do próprio arquivo (`--legal-comments=eof`).
 
 ## qrcode-generator-2.0.4.mjs
 
-- Origem: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4 (MIT, Kazuhiko Arase), só o gerador da matriz. O desenho em SVG é `qrSvg` em `web/ui.js`, sem estilo inline.
+- Origem: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4 (MIT, Kazuhiko Arase), só o gerador da matriz. O pacote não traz comentário legal que o esbuild preserve, então o `build.sh` põe o aviso da MIT no início do arquivo (`--banner:js`). O desenho em SVG é `qrSvg` em `web/ui.js`, sem estilo inline.
 - Usado pela folha "Usar em outro aparelho" (`web/app.js`), carregado só quando ela abre.
-- SHA-256: `72b924e598fc3efc0d4da0cd79acad3c89d01b2e378fb9839154225bab78e2a9`
+- SHA-256: `3ae0453cc6b13a2e9b0a776547b363aa93e52265a502e54f8520767791c8987a`
 - Reproduzir: `tools/vendor/qrcode/build.sh` (`npm ci --ignore-scripts` a partir do `package-lock.json` e esbuild 0.28.2). O hash tem de sair igual.
