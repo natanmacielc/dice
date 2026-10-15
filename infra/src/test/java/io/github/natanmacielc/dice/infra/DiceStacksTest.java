@@ -346,14 +346,12 @@ class DiceStacksTest {
                                                 "EvaluationWindowSec", 300)),
                                 // Sem CustomResponse: o plano Free recusa web ACL com resposta customizada.
                                 "Action", Map.of("Block", Map.of()))),
-                        Match.objectLike(Map.of("Name", "api-rate-per-ip", "Statement", Map.of("RateBasedStatement",
-                                Match.objectLike(Map.of("Limit", DiceCertStack.RATE_LIMIT_API, "AggregateKeyType", "IP",
-                                        "ScopeDownStatement", Map.of("ByteMatchStatement", Match.objectLike(Map.of(
-                                                "PositionalConstraint", "STARTS_WITH", "SearchString", "/api/")))))))),
                         Match.objectLike(Map.of("Name", "ip-reputation"))))));
         // O plano Free permite no máximo 5 regras.
         Map<?, ?> props = (Map<?, ?>) cert.findResources("AWS::WAFv2::WebACL").values().iterator().next().get("Properties");
         assertTrue(((List<?>) props.get("Rules")).size() <= 5);
+        // Regressão: o plano Free recusa byte match ("configuration not available in this tier: byte match").
+        assertFalse(props.toString().contains("ByteMatchStatement"), "byte match no web ACL");
         // A distribuição usa o WAF.
         dev.hasResourceProperties("AWS::CloudFront::Distribution", Map.of("DistributionConfig",
                 Match.objectLike(Map.of("WebACLId", Match.anyValue()))));
