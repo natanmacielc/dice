@@ -26,7 +26,31 @@ jobs:
           distribution: corretto
           java-version: '21'
           cache: maven
+      # Os testes do dice-app sobem DynamoDB Local via Testcontainers (Docker do runner).
       - run: ./mvnw -B -ntp verify
+      - name: Vetores commitados batem com o gerador
+        run: |
+          java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json
+          git diff --exit-code spec/test-vectors.json
+
+  infra:
+    name: Infra (CDK assertions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: corretto
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      # O CDK (jsii) roda sobre o Node. Nenhuma credencial AWS: só testes do template.
+      - run: ./mvnw -B -ntp -f infra/pom.xml verify
 
   python:
     name: Python verifier
@@ -39,7 +63,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
-      - run: python -m pip install pytest==9.1.1
+      - run: python -m pip install pytest==9.1.1 cryptography==50.0.2
       - run: python -m pytest tools/verify-py
 
   js:

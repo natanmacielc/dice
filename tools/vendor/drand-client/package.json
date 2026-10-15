@@ -1,0 +1,12 @@
+{
+  "name": "dice-vendor-drand-client",
+  "private": true,
+  "description": "Gera web/vendor/drand-client-1.4.2.mjs. Ver build.sh.",
+  "type": "module",
+  "dependencies": {
+    "drand-client": "1.4.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

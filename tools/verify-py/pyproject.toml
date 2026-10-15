@@ -1,9 +1,10 @@
 [project]
 name = "dice-verify"
 version = "0.1.0"
-description = "Verificador independente do Dado Verificável (só stdlib)."
+description = "Verificador independente do Roll Dice (stdlib; cryptography para a chain-v2)."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["cryptography==50.0.2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]

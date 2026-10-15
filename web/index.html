@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0616">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+  <title>Roll Dice</title>
+  <meta name="description" content="Rolagens de dados que qualquer um confere. O resultado vem de um número público do drand que ainda não existe quando você pede.">
+  <link rel="preload" href="/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body class="page-app">
+<svg class="svg-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="die-shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".38"/>
+      <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Roll Dice, início">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Roll <em>Dice</em></span>
+  </a>
+  <nav class="topbar-actions">
+    <button type="button" class="avatar-btn" data-open="player-dialog" id="me-btn" aria-label="Você: apelido e aparelhos">
+      <span class="avatar" id="me-avatar" aria-hidden="true">?</span>
+    </button>
+    <button type="button" class="chip" data-open="table-dialog" id="table-chip">
+      <span class="chip-dot" aria-hidden="true"></span><span id="table-chip-text">Mesa</span>
+    </button>
+    <button type="button" class="icon-btn" data-open="history-dialog" aria-label="Histórico da mesa">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4M12 7v5l3 2"/></svg>
+      <span class="icon-badge" id="history-count" hidden></span>
+    </button>
+    <a class="trust-link" href="/confianca.html" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+      <span>Por que confiar?</span>
+    </a>
+  </nav>
+</header>
+
+<main class="app">
+  <section class="stage" id="stage" role="button" tabindex="0" aria-label="Rolar o dado">
+    <svg class="ring" id="ring" viewBox="0 0 100 100" data-mode="idle" aria-hidden="true">
+      <circle class="ring-runes" cx="50" cy="50" r="48"/>
+      <circle class="ring-track" cx="50" cy="50" r="44"/>
+      <circle class="ring-progress" cx="50" cy="50" r="44" pathLength="100"/>
+      <circle class="ring-inner" cx="50" cy="50" r="38"/>
+    </svg>
+    <div class="tray" id="tray"></div>
+    <div class="banner" id="banner" hidden></div>
+  </section>
+
+  <div class="readout" aria-live="polite">
+    <p class="status-line" id="status-line">Escolha o dado e role</p>
+    <div class="result" id="result" hidden>
+      <p class="total" id="total">0</p>
+      <p class="breakdown" id="breakdown"></p>
+      <div class="result-actions">
+        <button type="button" class="badge" id="verify-badge" data-open="verify-dialog" hidden>
+          <span class="badge-icon" aria-hidden="true"></span><span class="badge-text">Conferindo…</span>
+        </button>
+        <button type="button" class="ghost-btn" id="share-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+          Compartilhar
+        </button>
+      </div>
+    </div>
+    <p class="error" id="roll-error" role="alert"></p>
+  </div>
+
+  <section class="controls" aria-label="Escolha do dado">
+    <div class="picker" id="picker" role="radiogroup" aria-label="Tipo de dado"></div>
+
+    <div class="tweaks">
+      <div class="stepper" data-field="count">
+        <span class="stepper-label" id="count-label">Dados</span>
+        <button type="button" class="step" data-step="-1" aria-label="Menos um dado">−</button>
+        <output class="stepper-value" id="count-value" aria-labelledby="count-label">1</output>
+        <button type="button" class="step" data-step="1" aria-label="Mais um dado">+</button>
+      </div>
+      <div class="stepper" data-field="modifier">
+        <span class="stepper-label" id="mod-label">Bônus</span>
+        <button type="button" class="step" data-step="-1" aria-label="Diminuir bônus">−</button>
+        <output class="stepper-value" id="mod-value" aria-labelledby="mod-label">0</output>
+        <button type="button" class="step" data-step="1" aria-label="Aumentar bônus">+</button>
+      </div>
+    </div>
+
+    <button type="button" class="roll-btn" id="roll-btn">
+      <span class="roll-btn-label">Rolar</span>
+      <span class="roll-btn-expr" id="roll-expr">1d20</span>
+    </button>
+    <p class="hint">ou aperte <kbd>Espaço</kbd></p>
+
+    <details class="advanced">
+      <summary>Opções avançadas</summary>
+      <div class="advanced-body">
+        <label class="field">
+          <span class="field-label">Sua seed</span>
+          <span class="field-row">
+            <input id="seed" maxlength="64" autocomplete="off" spellcheck="false">
+            <button type="button" class="ghost-btn" id="seed-gen">Nova</button>
+          </span>
+          <span class="field-help">Um texto seu que entra na conta junto com o número do drand. É escolhida antes de rolar, então nem o servidor sabe qual vai ser. Se você não mudar, uma nova é sorteada a cada rolagem.</span>
+        </label>
+        <label class="field">
+          <span class="field-label">Expressão</span>
+          <input id="expression" maxlength="16" autocomplete="off" spellcheck="false" placeholder="ex.: 2d6+3">
+          <span class="field-help">NdX+M, com N de 1 a 20, X em 4, 6, 8, 10, 12, 20 ou 100 e M até ±100.</span>
+        </label>
+      </div>
+    </details>
+  </section>
+</main>
+
+<dialog class="sheet" id="table-dialog" aria-labelledby="table-title">
+  <div class="sheet-head">
+    <h2 id="table-title">Mesa</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+
+  <div id="table-current" hidden>
+    <p class="table-name" id="table-name"></p>
+    <div class="kv">
+      <span class="kv-label">ID</span><code id="table-id"></code>
+      <button type="button" class="copy" id="table-id-copy">Copiar</button>
+    </div>
+    <button type="button" class="primary-btn" id="table-invite">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M19 8v6M16 11h6"/></svg>
+      Convidar para esta mesa
+    </button>
+  </div>
+  <p class="muted" id="table-none">Você ainda não está numa mesa. Uma é criada sozinha na primeira rolagem, ou crie agora.</p>
+
+  <button type="button" class="ghost-btn wide my-tables-open" data-open="tables-dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    Suas mesas<span class="my-tables-count" id="my-tables-count" hidden></span>
+  </button>
+
+  <form id="table-new" class="stack">
+    <label class="field">
+      <span class="field-label">Nova mesa</span>
+      <span class="field-row">
+        <input name="name" maxlength="64" autocomplete="off" placeholder="Nome (opcional)">
+        <button type="submit" class="ghost-btn">Criar</button>
+      </span>
+    </label>
+  </form>
+  <form id="table-join" class="stack">
+    <label class="field">
+      <span class="field-label">Entrar com o ID de uma mesa</span>
+      <span class="field-row">
+        <input name="sessionId" maxlength="16" autocomplete="off" spellcheck="false" placeholder="ID com 16 caracteres">
+        <button type="submit" class="ghost-btn">Entrar</button>
+      </span>
+    </label>
+  </form>
+  <p class="error" id="table-error" role="alert"></p>
+</dialog>
+
+<dialog class="sheet" id="tables-dialog" aria-labelledby="tables-title">
+  <div class="sheet-head">
+    <h2 id="tables-title">Suas mesas</h2>
+    <div class="sheet-head-actions">
+      <button type="button" class="icon-btn" id="my-tables-refresh" aria-label="Atualizar a lista" title="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg></button>
+      <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
+  <p class="sheet-lead">Mesas em que você rolou ou entrou, em todos os seus aparelhos. As mais recentes primeiro.</p>
+  <p class="field-help" id="my-tables-status" aria-live="polite"></p>
+  <p class="muted" id="my-tables-empty" hidden>Nenhuma mesa ainda. Ao rolar ou entrar numa mesa, ela aparece aqui.</p>
+  <ol class="table-list" id="my-tables-list"></ol>
+  <nav class="tables-pager" id="my-tables-pager" aria-label="Páginas das suas mesas" hidden>
+    <button type="button" class="ghost-btn" id="my-tables-prev">‹ Anterior</button>
+    <span class="tables-range" id="my-tables-range" aria-live="polite"></span>
+    <button type="button" class="ghost-btn" id="my-tables-next">Próxima ›</button>
+  </nav>
+</dialog>
+
+<dialog class="sheet" id="player-dialog" aria-labelledby="player-title">
+  <div class="sheet-head">
+    <h2 id="player-title">Você</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="sheet-lead" id="player-lead">Cada rolagem sai assinada por uma chave deste aparelho. O apelido aparece para a mesa; a impressão mostra que foi você, mesmo que outra pessoa use o mesmo apelido.</p>
+  <form id="player-form" class="stack">
+    <label class="field">
+      <span class="field-label">Apelido</span>
+      <span class="field-row">
+        <input name="name" maxlength="32" autocomplete="nickname" placeholder="ex.: Thorin" required>
+        <button type="submit" class="ghost-btn">Salvar</button>
+      </span>
+      <span class="field-help">Até 32 bytes. Fica gravado em cada rolagem; se mudar depois, só vale para as próximas.</span>
+    </label>
+  </form>
+  <dl class="facts player-facts">
+    <dt>Identidade</dt><dd><span class="avatar" id="player-avatar" aria-hidden="true"></span><code id="player-fingerprint">…</code></dd>
+    <dt>Este aparelho</dt><dd id="player-device">…</dd>
+  </dl>
+  <button type="button" class="ghost-btn wide" data-open="pair-dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="11" height="8" rx="1.5"/><path d="M1 16h15"/><rect x="17" y="8" width="6" height="12" rx="1.5"/></svg>
+    Usar em outro aparelho
+  </button>
+  <p class="field-help" id="player-ephemeral" hidden>Este navegador não guarda a chave: ao fechar a aba, você ganha outra. Para manter a mesma identidade, saia do modo privado.</p>
+  <p class="error" id="player-error" role="alert"></p>
+</dialog>
+
+<dialog class="sheet" id="pair-dialog" aria-labelledby="pair-title">
+  <div class="sheet-head">
+    <h2 id="pair-title">Usar em outro aparelho</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="sheet-lead">No celular, tablet ou outro navegador, aponte a câmera para o QR ou abra o link. Esse aparelho passa a rolar como você, com a mesma impressão. O link vale 10 minutos e serve para um aparelho só.</p>
+  <div class="qr-box" id="pair-qr"></div>
+  <div class="kv">
+    <code id="pair-link"></code>
+    <button type="button" class="copy" id="pair-copy" disabled>Copiar link</button>
+  </div>
+  <p class="status-line" id="pair-status" aria-live="polite"></p>
+  <p class="field-help">Um aparelho vinculado rola em seu nome enquanto existir. Vincule só aparelhos seus.</p>
+</dialog>
+
+<dialog class="sheet" id="join-dialog" aria-labelledby="join-title">
+  <div class="sheet-head">
+    <h2 id="join-title">Vincular este aparelho</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="status-line" id="join-status" aria-live="polite"></p>
+  <p class="table-name" id="join-who" hidden></p>
+  <p class="field-help" id="join-warning" hidden></p>
+  <button type="button" class="primary-btn" id="join-confirm" hidden>Rolar com esta identidade</button>
+  <p class="error" id="join-error" role="alert"></p>
+</dialog>
+
+<dialog class="drawer" id="history-dialog" aria-labelledby="history-title">
+  <div class="sheet-head">
+    <h2 id="history-title">Histórico</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="muted" id="history-empty">Nenhuma rolagem nesta mesa ainda.</p>
+  <div class="history-failed" id="history-failed" role="alert" hidden>
+    <p id="history-failed-text"></p>
+    <button type="button" class="ghost-btn" id="history-retry">Tentar de novo</button>
+  </div>
+  <ol class="history" id="history-list"></ol>
+  <div class="drawer-foot">
+    <div class="chain" id="chain" hidden></div>
+    <p class="chain-result" id="chain-result"></p>
+    <button type="button" class="ghost-btn wide" id="verify-table">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
+      Verificar a mesa inteira
+    </button>
+  </div>
+</dialog>
+
+<dialog class="sheet verify-sheet" id="verify-dialog" aria-labelledby="verify-title">
+  <div class="sheet-head">
+    <h2 id="verify-title">Conferindo…</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <p class="sheet-lead" id="verify-verdict"></p>
+  <ul class="checks" id="verify-checks"></ul>
+  <div class="sheet-links">
+    <a class="primary-btn" data-roll-link="/confianca.html?roll={id}" href="/confianca.html" target="_blank" rel="noopener">Refazer a conta você mesmo</a>
+    <a class="text-link" data-roll-link="/r/{id}" href="/">Página da rolagem</a>
+    <a class="text-link" data-roll-link="/api/rolls/{id}/proof" href="/" target="_blank" rel="noopener">Prova (JSON)</a>
+  </div>
+</dialog>
+</body>
+</html>

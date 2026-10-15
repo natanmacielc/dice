@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Fora do reactor (o build normal não baixa o aws-cdk-lib). Build: ./mvnw -f infra/pom.xml verify -->
+    <parent>
+        <groupId>io.github.natanmacielc.dice</groupId>
+        <artifactId>dice-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>dice-infra</artifactId>
+    <name>dice-infra</name>
+    <description>AWS CDK do Roll Dice. Deploy só pelo GitHub Actions.</description>
+
+    <properties>
+        <aws-cdk-lib.version>2.271.0</aws-cdk-lib.version>
+        <constructs.version>10.8.1</constructs.version>
+        <exec-maven-plugin.version>3.6.2</exec-maven-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <!-- O aws-cdk-lib e seus pacotes trazem versões diferentes; fica a que o próprio aws-cdk-lib usa. -->
+                <groupId>software.amazon.jsii</groupId>
+                <artifactId>jsii-runtime</artifactId>
+                <version>1.140.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>aws-cdk-lib</artifactId>
+            <version>${aws-cdk-lib.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.constructs</groupId>
+            <artifactId>constructs</artifactId>
+            <version>${constructs.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <configuration>
+                    <mainClass>io.github.natanmacielc.dice.infra.DiceApp</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

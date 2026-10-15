@@ -1,4 +1,4 @@
-# Dado Verificável
+# Roll Dice
 
 Sistema que prova que rolagens de dados em RPGs são imparciais. O resultado deriva de um valor público do drand que não existia quando o pedido foi feito; qualquer pessoa recalcula e confere. O servidor é só um livro-razão: não pode prever, escolher nem reescrever resultados.
 
@@ -13,18 +13,30 @@ Monólito modular, Java 21, Maven multi-módulo, um único artefato implantável
 - `tools/verify-py/`: verificador independente em Python.
 - `infra/`: AWS CDK em Java.
 
-Deploy: CloudFront, API Gateway HTTP API, Lambda (Quarkus, SnapStart), DynamoDB on-demand e S3. CI/CD no GitHub Actions com OIDC.
+Deploy: CloudFront (plano flat-rate Free, com WAF), Lambda (Quarkus, SnapStart) por Function URL com OAC, DynamoDB provisionado na cota gratuita e S3. Sem API Gateway. CI/CD no GitHub Actions com OIDC.
 
 ## Comandos
 
 JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `java` padrão é 17, então antes do Maven rode `export JAVA_HOME=$(/usr/libexec/java_home -v 21)`.
 
-- Build e testes: `./mvnw -q verify`
+- Build e testes: `./mvnw -q verify`. Os testes do dice-app precisam do Docker (DynamoDB Local via Testcontainers).
 - Só o núcleo: `./mvnw -q -pl dice-core test`
-- Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1`, depois `.venv/bin/python -m pytest tools/verify-py`.
+- Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1 cryptography==50.0.2`, depois `.venv/bin/python -m pytest tools/verify-py`. A cryptography só é usada pela chain-v2 (Ed25519).
+- CLI Python: `cd tools/verify-py && python3 -m dice_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
+- Verificar uma prova: `cd tools/verify-py && python3 -m dice_verify.proof prova.json`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
-- Infra, sem deploy: `cdk synth` e `cdk diff` (Fase 5; o módulo infra/ fica fora do reactor Maven).
-- CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main. As actions são fixadas por SHA.
+- Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl dice-core compile`, depois `java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
+- Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive` e `DRAND_LIVE=1 node --test web/verifier/drand-verify.test.mjs`
+- Imagem OG dentro da imagem do AWS Lambda (fora do CI, precisa de Docker): `./mvnw -pl dice-app -am verify -Plambda`
+- Rebuild do drand-client vendorizado: `tools/vendor/drand-client/build.sh` (o SHA-256 tem de bater com web/vendor/README.md)
+- Fonte da web (Bricolage Grotesque, recorte reprodutível): comandos e SHA-256 em web/fonts/README.md.
+- No `quarkus:dev`, mudanças em web/ não recarregam sozinhas (o diretório fica fora do módulo): rode `./mvnw -pl dice-app process-resources` ou reinicie.
+- Imagens OG estáticas (web/static): `java -cp dice-app/target/classes io.github.natanmacielc.dice.app.og.OgImageRenderer <dir>`
+- Infra (fora do reactor Maven): `./mvnw -f infra/pom.xml verify` (CDK assertions, precisa de Node) e, para sintetizar, `cd infra && npx --yes aws-cdk@2.1143.0 synth -c account=111111111111 -c hostedZoneId=Z000EXAMPLE`. Bootstrap e checklist em infra/README.md e infra/SECURITY.md.
+- Deploy: só pelo GitHub Actions (`.github/workflows/deploy-dev.yml`, OIDC). Nunca rode `cdk deploy` nem `aws` localmente.
+- Rodar o app localmente: o dice-app empacota para Lambda (`target/function.zip`), então `java -jar` não sobe servidor. Use `./mvnw -pl dice-app quarkus:dev` (mock event server do Lambda) com DynamoDB Local e s3mock, passando `-Ddice.dynamodb.endpoint-override=...` e `-Ddice.s3.endpoint-override=...`.
+- Smoke test de um ambiente: `tools/smoke/smoke-dev.sh <url>` (o deploy roda contra https://dice.nimbos.solutions). Precisa da cryptography (`tools/smoke/requirements.txt`): o pedido sai assinado por `tools/smoke/sign_request.py`, e `tools/smoke/pair_device.py` pareia um segundo aparelho pela API e rola com ele, e `tools/smoke/my_tables.py` confere a lista de mesas.
+- CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main e confere se `spec/test-vectors.json` bate com o gerador. As actions são fixadas por SHA.
 - Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
 
 ## Algoritmo v1 (detalhes em spec/ALGORITHM.md)
@@ -32,8 +44,20 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Rede: drand quicknet, chain hash fixo no código, rounds de 3 segundos.
 - Pedido: clientSeed (UTF-8, 1 a 64 bytes, escolhida antes do roll), expressão NdX+M e nonce sequencial por mesa. targetRound = latest.round + 2.
 - Cálculo: bloco(c) = SHA-256(randomness + "|" + clientSeed + "|" + nonce + "|" + c). Use palavras de 4 bytes big-endian sem sinal, em ordem. Descarte v >= 2^32 - (2^32 % lados). Resultado = v % lados + 1.
-- Cadeia de hash: entradas REQUEST, ROUND e RESULT. hash = SHA-256(prevHash + tipo + payload canônico).
+- Cadeia de hash (chain-v1): uma por mesa, entradas REQUEST, ROUND e RESULT. hash = SHA-256(prevHash + tipo + payload canônico). Payload em JSON canônico (subconjunto do RFC 8785) com seq, sessionId e rollId. prevHash da seq 1 = 64 zeros. Nonce começa em 1.
+- Resolução sob demanda: qualquer leitura (roll, prova, log) resolve pendentes cujo round alvo já existe. EXPIRED é só exibição (pendente mais de 60 s após o round alvo); não é estado gravado.
+- IDs de mesa e roll: 16 caracteres base32 Crockford minúsculo (80 bits). Página do roll: /r/{rollId}.
+- Web: /r/{rollId} é HTML do Quarkus (Qute, com Open Graph); o resto de web/ é estático e o build copia para o jar. O navegador busca o round direto no drand e verifica a BLS com o drand-client vendorizado (web/vendor). Nunca use innerHTML com dado da API.
+- Web (Fase 6): tema único escuro. Páginas: / (app.js), /r/{rollId} (roll.js) e /confianca.html (confianca.js: explicação e "confira você mesmo"). Peças visuais em web/ui.js, chamadas à API e verificação em web/api.js, lógica pura e testada em web/page-logic.js. O CSP proíbe style inline: animação só por classe CSS ou `el.style.setProperty`. A animação de rolagem nunca mostra número antes do resultado real. O passo a passo da conta (explainRoll) é só exibição; a fonte da verdade é roll() de web/verifier/dice-v1.js. Convite para mesa: /?mesa={sessionId}.
+- AWS: sa-east-1 (certificado do CloudFront em us-east-1), domínio dice.nimbos.solutions. Testes de concorrência chamam o RollService em paralelo (o servidor de teste do Lambda processa um evento por vez).
+- Imagem OG: Java2D com a fonte Inter do jar, gerada pela resolução vencedora e salva em S3 (og/{rollId}.png). No Linux sem fontconfig (Lambda), o renderer configura sun.awt.fontconfig sozinho.
 - Não existe server_seed.
+- Identidade (chain-v2, Fase 7, spec seção 7): todo REQUEST tem `player` {publicKey, name, requestId, signature, identityKey, links}. O aparelho (publicKey) assina em Ed25519 o JSON canônico de {context "dice-player-v1", sessionId, clientSeed, expression canônica, identityKey, name, requestId}. A identidade é a chave do primeiro aparelho; os outros entram por vínculos (até 8), cada um assinado pela chave anterior sobre {context "dice-device-v1", identityKey, deviceKey}. A identityKey tem de estar na mensagem do pedido (senão outro jogador vincula seu aparelho e toma seus pedidos). Apelido de 1 a 32 bytes (regras da seed). requestId repetido é replay (marcador REQ#{requestId} no DynamoDB). Mesas novas são chain-v2; mesas sem `chainFormat` são chain-v1, só leitura (409 TABLE_READ_ONLY), e o app cria outra. A chave nasce no navegador (web/identity.js, não exportável, IndexedDB) e nunca vai ao servidor. Impressão (só exibição): 4 primeiros bytes de SHA-256(identityKey), "3f9a-c2e1". Sem revogação de aparelho por enquanto.
+- Custo (Fase 9, infra/README.md "Custo zero e teto de gasto"): a API fica toda sob `/api` (o plano Free aceita 5 behaviors: default, /og/*, /r/* e /api/*); `/r/{rollId}` continua fora. Todo POST manda `x-amz-content-sha256` (SHA-256 hex do corpo), senão o CloudFront não assina o pedido à Function URL e a origem dá 403. Corpo até 16 KB. Throttle do DynamoDB vira 503 `SERVER_BUSY`. WAF bloqueia por IP com 429. Kill switch (alarmes de invocações e duração por hora) zera a concorrência do app; religar é manual no console (infra/README.md, "Derrubar e religar").
+- Pareamento de aparelhos (spec 7.7): /api/pairings (dice-app/pairing) só repassa dados públicos, item PAIRING#{id} com TTL `expiresAt` (10 min). O segredo vai no fragmento `/#parear={id}.{hex}` e autentica os dois sentidos com HMAC-SHA256 (web/pairing.js). QR do web/vendor (qrcode-generator, rebuild em tools/vendor/qrcode/build.sh).
+- Lista de mesas (Fase 8, spec 7.8): `POST /api/me/tables` com action list/add/remove, sempre assinado pelo aparelho (contexto "dice-tables-v1", `at` a até 5 min do relógio), porque o ID da mesa é o que dá acesso a ela. Índice IDENTITY#{identityKey}/TABLE#{sessionId} (dice-app/tables), gravado ao rolar (fora da transação da cadeia, melhor esforço) e ao criar/entrar numa mesa; página de 20 por cursor, mais recentes primeiro. Não sustenta confiança nenhuma.
+- Web (Fase 8): clicar no dado rola; a folha da mesa fecha ao criar, entrar ou trocar de mesa; a folha "Você" (avatar no cabeçalho) tem apelido, identidade e aparelhos; cor e inicial do jogador (playerColor/initialOf em page-logic.js) são só exibição, a impressão vai escrita ao lado. "Suas mesas" é uma folha própria (6 por página sobre as páginas de 20 do servidor) com cache `dice.tables` no localStorage por identityKey: só pede `list` ao abrir com cache vencido (10 min) ou no botão de atualizar; criar, entrar, rolar e tirar atualizam o cache local.
+- Verificação BLS: só no navegador (Fase 4). O backend checa randomness == SHA-256(signature) e o guarda de relógio: latest só é aceito a ±1 round do esperado por floor((agora - genesis)/3) + 1.
 
 ## Invariantes (nunca quebrar)
 
