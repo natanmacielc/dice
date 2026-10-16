@@ -31,6 +31,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Rebuild do drand-client vendorizado: `tools/vendor/drand-client/build.sh` (o SHA-256 tem de bater com web/vendor/README.md)
 - Fonte da web (Bricolage Grotesque, recorte reprodutível): comandos e SHA-256 em web/fonts/README.md.
 - No `quarkus:dev`, mudanças em web/ não recarregam sozinhas (o diretório fica fora do módulo): rode `./mvnw -pl dice-app process-resources` ou reinicie.
+- Ícones (favicon.ico, apple-touch-icon.png, icon-512.png): `java tools/icons/GenerateIcons.java web` (JDK 21, da raiz). O web/favicon.svg é o mesmo d20 à mão; mudou um, mude o outro.
 - Imagens OG estáticas (web/static): `java -cp dice-app/target/classes io.github.natanmacielc.dice.app.og.OgImageRenderer <dir>`
 - Infra (fora do reactor Maven): `./mvnw -f infra/pom.xml verify` (CDK assertions, precisa de Node) e, para sintetizar, `cd infra && npx --yes aws-cdk@2.1143.0 synth -c account=111111111111 -c hostedZoneId=Z000EXAMPLE`. Bootstrap e checklist em infra/README.md e infra/SECURITY.md.
 - Deploy: só pelo GitHub Actions (`.github/workflows/deploy-dev.yml`, OIDC). Nunca rode `cdk deploy` nem `aws` localmente.

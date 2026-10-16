@@ -186,18 +186,52 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .step { display: grid; place-items: center; padding: 0; line-height: 1; width: 2rem; height: 2rem; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .06); font-size: 1.1rem; touch-action: manipulation; user-select: none; }
 .step:hover { background: color-mix(in oklab, var(--c) 30%, transparent); }
 .stepper-value { min-width: 2.4rem; text-align: center; font-family: var(--display); font-weight: 800; font-size: 1.15rem; }
+/* Botão tátil: o rebordo de baixo (--depth) dá o volume e some quando o botão afunda. */
 .roll-btn {
-  position: relative; overflow: hidden; width: 100%; max-width: 22rem; border: 0; border-radius: 999px; padding: 1rem 1.5rem;
-  display: flex; align-items: baseline; justify-content: center; gap: .6rem; color: #fff;
-  background: linear-gradient(135deg, var(--magenta), var(--c)); box-shadow: 0 10px 36px -8px var(--c), inset 0 1px 0 rgba(255, 255, 255, .35);
-  transition: transform .15s, box-shadow .2s;
+  --depth: color-mix(in oklab, var(--c) 42%, #12061f);
+  --rim: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 0 rgba(10, 6, 22, .16);
+  position: relative; overflow: hidden; width: 100%; max-width: 22rem; min-height: 3.6rem; margin-bottom: 6px;
+  border: 0; border-radius: 999px; padding: .85rem 1.4rem;
+  display: flex; align-items: center; justify-content: center; gap: .7rem; color: #fff; text-decoration: none;
+  touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(135deg, var(--magenta), var(--c));
+  box-shadow: 0 6px 0 var(--depth), 0 14px 30px -10px var(--c), var(--rim);
+  transition: transform .12s ease, box-shadow .12s ease, filter .2s;
+  animation: roll-glow 2.8s ease-in-out infinite alternate;
 }
-.roll-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .35) 50%, transparent 70%); transform: translateX(-100%); animation: shimmer 3.2s ease-in-out infinite; }
-.roll-btn:hover { transform: translateY(-2px) scale(1.01); }
-.roll-btn:active { transform: scale(.97); }
-.roll-btn-label { font-family: var(--display); font-weight: 800; font-size: 1.5rem; text-transform: uppercase; letter-spacing: .06em; }
-.roll-btn-expr { font-family: var(--mono); opacity: .85; }
-body.is-rolling .roll-btn { opacity: .7; }
+.roll-btn::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, .28) 50%, transparent 60%) no-repeat;
+  background-size: 250% 100%; background-position: 150% 0; animation: roll-sheen 4s ease-in-out infinite;
+}
+@media (hover: hover) {
+  .roll-btn:hover { transform: translateY(-2px); filter: brightness(1.07) saturate(1.05); }
+  .roll-btn:hover .roll-btn-die { transform: rotate(20deg) scale(1.06); }
+}
+.roll-btn:active {
+  transform: translateY(5px); animation: none;
+  box-shadow: 0 1px 0 var(--depth), 0 6px 16px -8px var(--c), var(--rim);
+}
+.roll-btn:focus-visible { outline: 3px solid color-mix(in oklab, var(--c) 60%, #fff); outline-offset: 4px; }
+.roll-btn-die { width: 2.1rem; height: 2.1rem; flex: none; filter: drop-shadow(0 2px 2px rgba(10, 6, 22, .3)); transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+.roll-btn-die path { stroke: #fff; stroke-linejoin: round; stroke-linecap: round; }
+.d20-body { fill: rgba(255, 255, 255, .16); stroke-width: 3.6; }
+.d20-face { fill: rgba(255, 255, 255, .42); stroke-width: 2.6; }
+.d20-edges { fill: none; stroke-width: 2.6; stroke-opacity: .7; }
+.roll-btn-label { font-family: var(--display); font-weight: 800; font-size: 1.5rem; line-height: 1; text-transform: uppercase; letter-spacing: .06em; text-shadow: 0 1px 0 rgba(10, 6, 22, .25); }
+.roll-btn-busy { display: none; }
+.roll-btn-expr {
+  font-family: var(--mono); font-size: .9rem; font-weight: 600; line-height: 1; padding: .3rem .6rem; border-radius: 999px;
+  background: rgba(10, 6, 22, .24); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
+}
+/* Rolando: o botão fica meio afundado, o d20 gira e o rótulo troca. Nenhum número aparece aqui. */
+body.is-rolling .roll-btn:disabled {
+  opacity: 1; cursor: progress; transform: translateY(3px); animation: none; filter: saturate(.85);
+  box-shadow: 0 3px 0 var(--depth), 0 8px 20px -10px var(--c), var(--rim);
+}
+body.is-rolling .roll-btn-die { animation: spin .8s linear infinite; }
+body.is-rolling .roll-btn-idle { display: none; }
+body.is-rolling .roll-btn-busy { display: inline; }
 .hint { margin: -.4rem 0 0; color: var(--faint); font-size: .8rem; }
 @media (hover: none) { .hint { display: none; } }
 
@@ -432,7 +466,11 @@ dialog.is-closing { animation: fade-out .22s ease-in forwards !important; }
 @keyframes sheet-in { from { transform: translateY(24px) scale(.96); opacity: 0; } }
 @keyframes drawer-in { from { transform: translateX(100%); } }
 @keyframes fade-out { to { opacity: 0; transform: translateY(12px); } }
-@keyframes shimmer { 0%, 60% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+@keyframes roll-sheen { 0%, 65% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
+@keyframes roll-glow {
+  from { box-shadow: 0 6px 0 var(--depth), 0 14px 30px -10px var(--c), var(--rim); }
+  to { box-shadow: 0 6px 0 var(--depth), 0 16px 44px -6px var(--c), var(--rim); }
+}
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes ring-flash { 30% { stroke-width: 7; stroke: #fff; } }
 @keyframes dash { to { stroke-dashoffset: -18; } }
