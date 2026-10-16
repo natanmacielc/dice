@@ -21,9 +21,9 @@ for (const page of ['index.html', 'confianca.html']) {
 
   test(`${page}: favicon e ícone do iOS`, () => {
     const html = read(page);
-    assert.match(html, /<link rel="icon" href="\/favicon\.ico" sizes="32x32">/);
-    assert.match(html, /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml">/);
-    assert.match(html, /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png">/);
+    assert.match(html, /<link rel="icon" href="\/favicon\.ico\?v=2" sizes="32x32">/);
+    assert.match(html, /<link rel="icon" href="\/favicon\.svg\?v=2" type="image\/svg\+xml">/);
+    assert.match(html, /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png\?v=2">/);
     assert.doesNotMatch(html, /href="data:/);
   });
 }
