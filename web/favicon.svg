@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- d20 da marca; mesmo desenho de tools/icons/GenerateIcons.java (mudou um, mude o outro). -->
+  <defs>
+    <linearGradient id="g" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff3d9a"/>
+      <stop offset="1" stop-color="#a86bff"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 3 57.1 17.5V46.5L32 61 6.9 46.5V17.5Z" fill="url(#g)"/>
+  <g stroke="#fff" stroke-opacity=".47" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M32 16 47.5 42.5H16.5Z" fill="#fff" fill-opacity=".3"/>
+    <path d="M32 3 6.9 17.5 32 16Z" fill="#fff" fill-opacity=".16"/>
+    <path d="M32 3 32 16 57.1 17.5Z" fill="#fff" fill-opacity=".1"/>
+    <path d="M6.9 17.5 16.5 42.5 32 16Z" fill="#fff" fill-opacity=".04"/>
+    <path d="M57.1 17.5 32 16 47.5 42.5Z" fill="#14062a" fill-opacity=".02"/>
+    <path d="M6.9 17.5V46.5L16.5 42.5Z" fill="#14062a" fill-opacity=".12"/>
+    <path d="M57.1 17.5 47.5 42.5 57.1 46.5Z" fill="#14062a" fill-opacity=".16"/>
+    <path d="M16.5 42.5 32 61 47.5 42.5Z" fill="#14062a" fill-opacity=".22"/>
+    <path d="M6.9 46.5 32 61 16.5 42.5Z" fill="#14062a" fill-opacity=".3"/>
+    <path d="M47.5 42.5 32 61 57.1 46.5Z" fill="#14062a" fill-opacity=".32"/>
+  </g>
+  <path d="M32 3 57.1 17.5V46.5L32 61 6.9 46.5V17.5Z" fill="none" stroke="#fff" stroke-opacity=".78" stroke-width="2.4" stroke-linejoin="round"/>
+</svg>

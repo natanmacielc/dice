@@ -14,3 +14,5 @@ Site estático e verificador em JavaScript, que busca o round direto no drand. T
 | `page-logic.js` | lógica pura, testada no Node |
 | `verifier/` | verificadores do dice-v1, da chain-v1 e da chain-v2 (fonte da verdade no navegador) |
 | `fonts/`, `vendor/` | fonte e drand-client vendorizados, com origem e SHA-256 |
+| `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `icon-512.png` | ícone d20. O SVG é feito à mão; os outros saem de `java tools/icons/GenerateIcons.java web` (mesmo desenho; mudou um, mude o outro) |
+| `static/` | imagens Open Graph das páginas estáticas e do roll pendente |
